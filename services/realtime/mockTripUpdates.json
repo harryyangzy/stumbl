@@ -1,0 +1,20 @@
+{
+  "header": {
+    "gtfsRealtimeVersion": "2.0",
+    "timestamp": "2000000000"
+  },
+  "entity": [
+    {
+      "id": "mock-102",
+      "tripUpdate": {
+        "trip": { "tripId": "T102_M_002", "routeId": "102" },
+        "stopTimeUpdate": [
+          {
+            "stopId": "STOP_RICH_OX",
+            "arrival": { "time": "2000000060" }
+          }
+        ]
+      }
+    }
+  ]
+}

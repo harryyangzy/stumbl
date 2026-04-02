@@ -1,0 +1,3 @@
+route_id,agency_id,route_short_name,route_long_name,route_type,route_color
+102,LTC,102,Downtown — White Oaks,3,
+104,LTC,104,North — Masonville,3,

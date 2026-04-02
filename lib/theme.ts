@@ -1,0 +1,27 @@
+export const theme = {
+  brandGreen: '#2D6A4F',
+  brandGreenPressed: '#245a43',
+  screenBg: '#F5F0E8',
+  cardBg: '#EDE6DB',
+  widgetCardBg: '#E8DFD2',
+  textPrimary: '#1C1C1E',
+  textSecondary: '#5C5C5C',
+  borderSubtle: '#D4CFC4',
+  routePillBg: '#F4D03F',
+  routePillText: '#1C1C1E',
+  white: '#FFFFFF',
+  radiusLg: 20,
+  radiusMd: 16,
+  radiusSm: 12,
+  radiusPill: 999,
+  spaceXs: 6,
+  spaceSm: 12,
+  spaceMd: 20,
+  spaceLg: 28,
+  title: 32,
+  subtitle: 17,
+  body: 16,
+  caption: 14,
+} as const;
+
+export type Theme = typeof theme;

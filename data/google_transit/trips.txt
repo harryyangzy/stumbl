@@ -1,0 +1,6 @@
+route_id,service_id,trip_id,trip_headsign,direction_id,block_id,shape_id
+102,WEEKDAY,T102_M_001,White Oaks,0,,
+102,WEEKDAY,T102_M_002,White Oaks,0,,
+102,WEEKDAY,T102_E_001,White Oaks,0,,
+104,WEEKDAY,T104_M_001,Masonville,0,,
+104,WEEKDAY,T104_M_002,Masonville,0,,

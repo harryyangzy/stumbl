@@ -1,0 +1,6 @@
+stop_id,stop_name,stop_lat,stop_lon,stop_code,location_type
+STOP_RICH_OX,Richmond St @ Oxford St,42.9921,-81.2451,5240,0
+STOP_WELL_OX,Wellington St @ Oxford St,42.9915,-81.2501,5241,0
+STOP_DUNDAS,Dundas St @ Richmond St,42.9850,-81.2400,1200,0
+STOP_VICTORIA,Victoria Park @ Dundas,43.0100,-81.2100,3400,0
+STOP_HIGHBURY,Highbury Ave N @ Dundas,43.0200,-81.1900,4100,0
