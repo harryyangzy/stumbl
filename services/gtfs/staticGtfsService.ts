@@ -1,5 +1,5 @@
 import { Asset } from 'expo-asset';
-import * as FileSystem from 'expo-file-system';
+import { readAsStringAsync } from 'expo-file-system/legacy';
 
 import { parseGtfsTable } from '@/lib/csv';
 import type { GtfsRoute, GtfsStop, GtfsStopTime, GtfsTrip } from '@/types/gtfs';
@@ -13,23 +13,67 @@ async function loadBundledText(mod: number): Promise<string> {
   const asset = Asset.fromModule(mod);
   await asset.downloadAsync();
   const uri = asset.localUri ?? asset.uri;
-  return FileSystem.readAsStringAsync(uri);
+  return readAsStringAsync(uri);
 }
 
 function normalizeQuery(q: string): string {
   return q.trim().toLowerCase();
 }
 
-function scoreStopMatch(stop: GtfsStop, q: string): number {
-  if (!q) return 0;
-  const name = stop.stopName.toLowerCase();
-  const code = (stop.stopCode ?? '').toLowerCase();
-  if (code && code === q) return 1000;
-  if (name === q) return 900;
-  if (code && code.includes(q)) return 700;
-  if (name.includes(q)) return 500 + (name.startsWith(q) ? 50 : 0);
-  const tokens = q.split(/\s+/).filter(Boolean);
-  if (tokens.every((t) => name.includes(t))) return 400;
+/** Lowercase words (letters/digits only) for fuzzy name matching. */
+function normalizeMatchWords(s: string): string {
+  const parts =
+    s
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .match(/[a-z0-9]+/g) ?? [];
+  return parts.join(' ');
+}
+
+/** All alnum from name/query, no spaces — "Main St" → "mainst". */
+function alnumCompressed(s: string): string {
+  return normalizeMatchWords(s).replace(/\s/g, '');
+}
+
+/** True if every character of `needle` appears in order in `haystack`. */
+function subsequenceMatch(haystack: string, needle: string): boolean {
+  if (!needle) return true;
+  let i = 0;
+  for (let j = 0; j < haystack.length && i < needle.length; j++) {
+    if (haystack[j] === needle[i]) i++;
+  }
+  return i === needle.length;
+}
+
+/** Query normalized once per search; stop fields precomputed at GTFS load. */
+function scoreStopMatchPrecomputed(
+  qTrim: string,
+  qWords: string,
+  qComp: string,
+  code: string | null,
+  nameWords: string,
+  nameComp: string
+): number {
+  if (!qTrim || !qComp) return 0;
+
+  const codeLc = (code ?? '').toLowerCase().trim();
+
+  if (codeLc && codeLc === qTrim.replace(/\s/g, '')) return 1000;
+  if (codeLc && codeLc.includes(qTrim)) return 880;
+
+  if (nameWords === qWords) return 960;
+  if (nameComp === qComp) return 950;
+
+  if (nameWords.includes(qWords)) return 520 + (nameWords.startsWith(qWords) ? 60 : 0);
+  if (nameComp.includes(qComp)) return 500 + (nameComp.startsWith(qComp) ? 50 : 0);
+
+  const tokens = qWords.split(' ').filter(Boolean);
+  if (tokens.length > 1 && tokens.every((t) => nameWords.includes(t))) return 430;
+
+  if (qComp.length >= 2 && subsequenceMatch(nameComp, qComp)) return 380;
+  if (qComp.length === 1 && nameComp.includes(qComp)) return 320;
+
   return 0;
 }
 
@@ -57,8 +101,12 @@ export function gtfsClockToDate(serviceDayStart: Date, clock: string): Date {
   return out;
 }
 
+type StopSearchRow = { stop: GtfsStop; nameWords: string; nameComp: string };
+
 export class StaticGtfsService {
   private stops: GtfsStop[] = [];
+  /** Precomputed at load — avoids NFD/regex on every stop on every keystroke (~2k stops). */
+  private stopSearchRows: StopSearchRow[] = [];
   private routes = new Map<string, GtfsRoute>();
   private trips = new Map<string, GtfsTrip>();
   private tripsByRoute = new Map<string, GtfsTrip[]>();
@@ -79,6 +127,12 @@ export class StaticGtfsService {
       stopLat: parseFloat(r.stop_lat),
       stopLon: parseFloat(r.stop_lon),
       stopCode: r.stop_code || null,
+    }));
+
+    this.stopSearchRows = this.stops.map((stop) => ({
+      stop,
+      nameWords: normalizeMatchWords(stop.stopName),
+      nameComp: alnumCompressed(stop.stopName),
     }));
 
     for (const r of parseGtfsTable(routesRaw)) {
@@ -124,13 +178,35 @@ export class StaticGtfsService {
 
   searchStops(query: string, limit = 40): GtfsStop[] {
     const q = normalizeQuery(query);
-    if (!q) return [];
-    return [...this.stops]
-      .map((s) => ({ s, score: scoreStopMatch(s, q) }))
-      .filter((x) => x.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit)
-      .map((x) => x.s);
+    if (!q) {
+      return [];
+    }
+
+    const qTrim = query.trim().toLowerCase();
+    const qWords = normalizeMatchWords(query);
+    const qComp = alnumCompressed(query);
+    if (!qComp) {
+      return [];
+    }
+
+    const scored: { stop: GtfsStop; score: number }[] = [];
+    for (const row of this.stopSearchRows) {
+      const score = scoreStopMatchPrecomputed(
+        qTrim,
+        qWords,
+        qComp,
+        row.stop.stopCode,
+        row.nameWords,
+        row.nameComp
+      );
+      if (score > 0) scored.push({ stop: row.stop, score });
+    }
+    scored.sort(
+      (a, b) =>
+        b.score - a.score ||
+        a.stop.stopName.localeCompare(b.stop.stopName, undefined, { sensitivity: 'base' })
+    );
+    return scored.slice(0, limit).map((x) => x.stop);
   }
 
   routesServingStop(stopId: string): { route: GtfsRoute; headsign: string }[] {
@@ -208,8 +284,9 @@ let singleton: StaticGtfsService | null = null;
 
 export async function getStaticGtfsService(): Promise<StaticGtfsService> {
   if (!singleton) {
-    singleton = new StaticGtfsService();
-    await singleton.load();
+    const next = new StaticGtfsService();
+    await next.load();
+    singleton = next;
   }
   return singleton;
 }

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BackLink } from '@/components/ui/BackLink';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { TimeRulerPicker } from '@/components/ui/TimeRulerPicker';
 import { theme } from '@/lib/theme';
@@ -23,19 +24,21 @@ export default function BufferScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.body}>
-        <Text style={styles.title}>Add a time delay</Text>
-        <Text style={styles.sub}>Arrive this many minutes before the bus is due</Text>
-        <TimeRulerPicker
-          min={0}
-          max={15}
-          value={value}
-          onChange={setValue}
-          unitSingular="Minute"
-          unitPlural="Minutes"
-        />
+        <BackLink />
+        <View style={styles.centerBlock}>
+          <Text style={styles.title}>Add a time delay</Text>
+          <TimeRulerPicker
+            min={0}
+            max={15}
+            value={value}
+            onChange={setValue}
+            unitSingular="Minute"
+            unitPlural="Minutes"
+          />
+        </View>
       </View>
       <View style={styles.footer}>
-        <PrimaryButton title="Continue" onPress={onNext} />
+        <PrimaryButton title="Next" onPress={onNext} />
       </View>
     </SafeAreaView>
   );
@@ -43,20 +46,25 @@ export default function BufferScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.screenBg },
-  body: { flex: 1, padding: theme.spaceLg },
-  title: {
-    fontSize: theme.title,
-    fontWeight: '800',
-    color: theme.textPrimary,
-    marginBottom: theme.spaceXs,
+  body: {
+    flex: 1,
+    paddingHorizontal: theme.spaceLg,
+    paddingTop: theme.spaceSm,
   },
-  sub: {
-    fontSize: theme.subtitle,
-    color: theme.textSecondary,
-    marginBottom: theme.spaceMd,
+  centerBlock: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingBottom: 40,
+  },
+  title: {
+    ...theme.textHeading,
+    textAlign: 'center',
+    marginBottom: theme.spaceLg,
+    paddingHorizontal: theme.spaceSm,
   },
   footer: {
     padding: theme.spaceLg,
     paddingBottom: 28,
+    alignItems: 'center',
   },
 });

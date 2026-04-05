@@ -1,83 +1,125 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { theme } from '@/lib/theme';
 
+const CHECKBOX = 18;
+const CHECKBOX_RADIUS = 6;
+const CHECKBOX_STROKE = 1;
+const CHECKBOX_INNER = 12;
+const CHECKBOX_INNER_RADIUS = 4;
+/** Match `lineBoxText` lineHeight so checkbox centers on the line badge row. */
+const LINE_ROW_HEIGHT = 20;
+
 type Props = {
   routeShortName: string;
-  label: string;
+  /** Already formatted, e.g. "to Natural Science". */
+  destinationLabel: string;
   selected: boolean;
   onPress: () => void;
 };
 
-export function RouteSelectRow({ routeShortName, label, selected, onPress }: Props) {
+export function RouteSelectRow({
+  routeShortName,
+  destinationLabel,
+  selected,
+  onPress,
+}: Props) {
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
-      accessibilityRole="radio"
-      accessibilityState={{ selected }}>
-      <View style={styles.pill}>
-        <Text style={styles.pillText}>{routeShortName}</Text>
+      style={({ pressed }) => [styles.pill, pressed && styles.pressed]}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: selected }}>
+      <View style={styles.leftCluster}>
+        <View style={styles.lineBox}>
+          <Text style={styles.lineBoxText}>{routeShortName}</Text>
+        </View>
+        <Text
+          style={styles.destination}
+          numberOfLines={2}
+          {...(Platform.OS === 'android' ? { includeFontPadding: false } : {})}>
+          {destinationLabel}
+        </Text>
       </View>
-      <Text style={styles.label} numberOfLines={2}>
-        {label}
-      </Text>
-      <View style={[styles.radioOuter, selected && styles.radioOuterOn]}>
-        {selected ? <View style={styles.radioInner} /> : null}
+      <View style={styles.checkboxAlign}>
+        <View style={styles.checkboxOuter}>
+          {selected ? <View style={styles.checkboxInner} /> : null}
+        </View>
       </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  row: {
+  pill: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
     backgroundColor: theme.white,
-    borderRadius: theme.radiusMd,
+    borderRadius: theme.radiusPill,
+    borderWidth: 1,
+    borderColor: theme.grey,
     paddingVertical: 14,
     paddingHorizontal: theme.spaceMd,
     marginBottom: theme.spaceSm,
-    gap: 12,
   },
   pressed: {
-    opacity: 0.92,
+    opacity: 0.88,
+    transform: [{ scale: 0.995 }],
   },
-  pill: {
-    backgroundColor: theme.routePillBg,
-    borderRadius: theme.radiusSm,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    minWidth: 48,
-    alignItems: 'center',
-  },
-  pillText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: theme.routePillText,
-  },
-  label: {
+  /** Line number + “to …” grouped; 8px between them; shares space with checkbox via space-between on pill. */
+  leftCluster: {
     flex: 1,
-    fontSize: theme.body,
-    color: theme.textPrimary,
-    fontWeight: '500',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    minWidth: 0,
+    marginRight: theme.spaceSm,
   },
-  radioOuter: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    borderWidth: 2,
-    borderColor: theme.borderSubtle,
+  lineBox: {
+    backgroundColor: theme.routePillBg,
+    borderRadius: 6,
+    paddingTop: 0,
+    paddingBottom: 0,
+    paddingLeft: 4,
+    paddingRight: 4,
+    minHeight: LINE_ROW_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  radioOuterOn: {
-    borderColor: theme.brandGreen,
+  lineBoxText: {
+    fontFamily: theme.fonts.heading,
+    fontSize: 15,
+    lineHeight: 20,
+    color: theme.routePillText,
   },
-  radioInner: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+  destination: {
+    flex: 1,
+    flexShrink: 1,
+    paddingTop: 0,
+    fontFamily: theme.fonts.body,
+    fontSize: theme.body,
+    lineHeight: LINE_ROW_HEIGHT,
+    color: theme.textPrimary,
+  },
+  /** Keeps checkbox vertically centered on the line badge row when destination wraps. */
+  checkboxAlign: {
+    marginTop: Math.max(0, (LINE_ROW_HEIGHT - CHECKBOX) / 2),
+  },
+  checkboxOuter: {
+    width: CHECKBOX,
+    height: CHECKBOX,
+    borderRadius: CHECKBOX_RADIUS,
+    borderWidth: CHECKBOX_STROKE,
+    borderColor: theme.grey,
+    backgroundColor: theme.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxInner: {
+    width: CHECKBOX_INNER,
+    height: CHECKBOX_INNER,
+    borderRadius: CHECKBOX_INNER_RADIUS,
     backgroundColor: theme.brandGreen,
   },
 });

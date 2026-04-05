@@ -1,6 +1,8 @@
-import Constants, { ExecutionEnvironment } from 'expo-constants';
+import Constants from 'expo-constants';
 
 import type { WidgetDisplayProps } from '@/services/widget/widgetViewModel';
+
+import { isExpoGo } from '@/lib/isExpoGo';
 
 /** Matches `createWidget` return (updateSnapshot only used here). */
 export type StumblWidgetHandle = {
@@ -14,7 +16,10 @@ let loadPromise: Promise<StumblWidgetHandle | null> | null = null;
  * Expo Go does not ship the `ExpoUI` native module — use a dev build (`expo run:ios`).
  */
 export function loadStumblWidget(): Promise<StumblWidgetHandle | null> {
-  if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
+  if (Constants.expoConfig?.extra?.disableNativeWidgets === true) {
+    return Promise.resolve(null);
+  }
+  if (isExpoGo()) {
     return Promise.resolve(null);
   }
 

@@ -1,0 +1,161 @@
+import { useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { BackLink } from '@/components/ui/BackLink';
+import { PrimaryButton } from '@/components/ui/PrimaryButton';
+import { RouteSelectRow } from '@/components/ui/RouteSelectRow';
+import { formatLineDestinationLabel } from '@/lib/routeLineLabel';
+import { theme } from '@/lib/theme';
+import { getStaticGtfsService } from '@/services/gtfs/staticGtfsService';
+import { useCommuteStore } from '@/store/commuteStore';
+
+type LineOption = { routeId: string; shortName: string; label: string };
+
+export default function LineScreen() {
+  const router = useRouter();
+  const draft = useCommuteStore((s) => s.draft);
+  const setDraft = useCommuteStore((s) => s.setDraft);
+
+  const [loading, setLoading] = useState(true);
+  const [options, setOptions] = useState<LineOption[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!draft.stopId) {
+        setLoading(false);
+        return;
+      }
+      const svc = await getStaticGtfsService();
+      const rows = svc.routesServingStop(draft.stopId);
+      if (!cancelled) {
+        setOptions(
+          rows.map((r) => ({
+            routeId: r.route.routeId,
+            shortName: r.route.shortName,
+            label: r.headsign || r.route.longName,
+          }))
+        );
+        setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [draft.stopId]);
+
+  const selectedIds = useMemo(
+    () => draft.selectedRouteIds ?? (draft.routeId ? [draft.routeId] : []),
+    [draft.selectedRouteIds, draft.routeId]
+  );
+
+  const toggleRoute = useCallback(
+    (o: LineOption) => {
+      const has = selectedIds.includes(o.routeId);
+      const next = has ? selectedIds.filter((id) => id !== o.routeId) : [...selectedIds, o.routeId];
+      const primary = options.find((x) => x.routeId === next[0]);
+      setDraft({
+        selectedRouteIds: next,
+        ...(primary
+          ? {
+              routeId: primary.routeId,
+              routeShortName: primary.shortName,
+              headsign: primary.label,
+            }
+          : {
+              routeId: undefined,
+              routeShortName: undefined,
+              headsign: undefined,
+            }),
+      });
+    },
+    [options, selectedIds, setDraft]
+  );
+
+  const onNext = () => {
+    if (selectedIds.length === 0) return;
+    router.push('/(onboarding)/walking');
+  };
+
+  if (!draft.stopId) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.missWrap}>
+          <Text style={styles.miss}>Select a stop first.</Text>
+          <PrimaryButton title="Back" onPress={() => router.back()} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.main}>
+        <ScrollView
+          style={styles.scrollArea}
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          <BackLink />
+
+          <Text style={styles.title}>What transit line do you take?</Text>
+          <Text style={styles.sub}>Select one or more</Text>
+
+          {loading ? (
+            <ActivityIndicator color={theme.brandGreen} style={styles.loader} />
+          ) : (
+            options.map((o) => (
+              <RouteSelectRow
+                key={o.routeId}
+                routeShortName={o.shortName}
+                destinationLabel={formatLineDestinationLabel(o.shortName, o.label)}
+                selected={selectedIds.includes(o.routeId)}
+                onPress={() => toggleRoute(o)}
+              />
+            ))
+          )}
+        </ScrollView>
+      </View>
+      <View style={styles.footer}>
+        <PrimaryButton title="Next" onPress={onNext} />
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: theme.screenBg },
+  main: { flex: 1, minHeight: 0 },
+  scrollArea: { flex: 1 },
+  scroll: { padding: theme.spaceLg, paddingBottom: theme.spaceLg },
+  title: {
+    ...theme.textHeading,
+    marginBottom: theme.spaceXs,
+  },
+  sub: {
+    fontFamily: theme.fonts.body,
+    fontSize: theme.subtitle,
+    color: theme.grey,
+    marginBottom: theme.spaceMd,
+  },
+  loader: { marginTop: theme.spaceLg },
+  footer: {
+    padding: theme.spaceLg,
+    paddingBottom: 32,
+    alignItems: 'center',
+  },
+  missWrap: {
+    flex: 1,
+    padding: theme.spaceLg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: theme.spaceMd,
+  },
+  miss: {
+    fontFamily: theme.fonts.body,
+    fontSize: theme.body,
+    textAlign: 'center',
+  },
+});

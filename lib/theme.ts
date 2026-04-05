@@ -1,27 +1,86 @@
-export const theme = {
-  brandGreen: '#2D6A4F',
-  brandGreenPressed: '#245a43',
-  screenBg: '#F5F0E8',
-  cardBg: '#EDE6DB',
-  widgetCardBg: '#E8DFD2',
-  textPrimary: '#1C1C1E',
-  textSecondary: '#5C5C5C',
-  borderSubtle: '#D4CFC4',
-  routePillBg: '#F4D03F',
-  routePillText: '#1C1C1E',
+/**
+ * Stumbl design tokens — aligned with Figma (brand colors + font roles).
+ */
+export const colors = {
+  yellow: '#F8BB36',
+  green: '#148240',
+  greenPressed: '#0f6b34',
+  offWhite: '#FBF2E5',
+  black: '#000000',
+  grey: '#787572',
   white: '#FFFFFF',
-  radiusLg: 20,
-  radiusMd: 16,
-  radiusSm: 12,
+} as const;
+
+/** PostScript / useFonts keys — must match `useFonts` in `app/_layout.tsx`. */
+export const fontFamilies = {
+  display: 'Monotalic-Medium',
+  heading: 'Parabolica-Medium',
+  body: 'Parabolica-Regular',
+} as const;
+
+export const theme = {
+  ...colors,
+
+  brandGreen: colors.green,
+  brandGreenPressed: colors.greenPressed,
+  screenBg: colors.offWhite,
+  cardBg: colors.white,
+  widgetCardBg: '#EDE8E0',
+  textPrimary: colors.black,
+  textSecondary: colors.grey,
+  borderSubtle: 'rgba(0,0,0,0.12)',
+  routePillBg: colors.yellow,
+  routePillText: colors.black,
+
+  radiusLg: 24,
+  radiusMd: 20,
+  radiusSm: 14,
   radiusPill: 999,
+
   spaceXs: 6,
   spaceSm: 12,
   spaceMd: 20,
-  spaceLg: 28,
-  title: 32,
-  subtitle: 17,
+  spaceLg: 24,
+
+  /** Heading: Parabolica Medium 24 */
+  title: 24,
+  /** Body: Parabolica Regular 16 */
   body: 16,
+  /** Secondary lines (same size as body, use with grey color) */
+  subtitle: 16,
+  /** Main button: Parabolica Medium 18 */
+  button: 18,
   caption: 14,
+  /** Welcome logo */
+  displayLogo: 64,
+
+  fonts: fontFamilies,
+
+  /** Reusable text styles (omit fontWeight when using a specific face). */
+  textHeading: {
+    fontFamily: fontFamilies.heading,
+    fontSize: 24,
+    color: colors.black,
+  },
+  textBody: {
+    fontFamily: fontFamilies.body,
+    fontSize: 16,
+    color: colors.black,
+  },
+  textBodyGrey: {
+    fontFamily: fontFamilies.body,
+    fontSize: 16,
+    color: colors.grey,
+  },
+  textButton: {
+    fontFamily: fontFamilies.heading,
+    fontSize: 18,
+  },
+  textDisplay: {
+    fontFamily: fontFamilies.display,
+    fontSize: 64,
+    color: colors.offWhite,
+  },
 } as const;
 
 export type Theme = typeof theme;

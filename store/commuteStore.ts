@@ -12,6 +12,8 @@ export type OnboardingDraft = {
   routeId?: string;
   routeShortName?: string;
   headsign?: string | null;
+  /** Multi-select on line screen; primary route fields stay in sync with first id for save/countdown. */
+  selectedRouteIds?: string[];
   walkingMinutes?: number;
   bufferMinutes?: number;
 };
@@ -47,6 +49,7 @@ export const useCommuteStore = create<CommuteState>()(
             routeId: c.routeId,
             routeShortName: c.routeShortName,
             headsign: c.headsign,
+            selectedRouteIds: [c.routeId],
             walkingMinutes: c.walkingMinutes,
             bufferMinutes: c.bufferMinutes,
           },

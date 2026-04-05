@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
   NativeScrollEvent,
@@ -11,8 +11,11 @@ import {
 
 import { theme } from '@/lib/theme';
 
-const TICK = 10;
-const VISIBLE = Math.min(Dimensions.get('window').width - 48, 340);
+const ITEM_W = 56;
+
+function formatMinuteValue(n: number): string {
+  return `${n}:00`;
+}
 
 type Props = {
   min: number;
@@ -32,64 +35,87 @@ export function TimeRulerPicker({
   unitPlural,
 }: Props) {
   const scrollRef = useRef<ScrollView>(null);
-  const range = max - min + 1;
-  const sidePad = VISIBLE / 2 - TICK / 2;
+  const width = Dimensions.get('window').width;
+  const sidePad = Math.max(0, (width - ITEM_W) / 2);
+  const count = max - min + 1;
 
-  const snapTo = useCallback(
+  const [centered, setCentered] = useState(value);
+
+  useEffect(() => {
+    setCentered(value);
+  }, [value]);
+
+  const snapFromOffset = useCallback(
     (x: number) => {
-      const idx = Math.round(x / TICK);
-      const clamped = Math.min(max, Math.max(min, min + idx));
-      return clamped;
+      const idx = Math.round(x / ITEM_W);
+      return Math.min(max, Math.max(min, min + idx));
     },
     [max, min]
   );
 
+  const scrollToValue = useCallback(
+    (v: number, animated: boolean) => {
+      const i = v - min;
+      scrollRef.current?.scrollTo({ x: i * ITEM_W, animated });
+    },
+    [min]
+  );
+
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const x = e.nativeEvent.contentOffset.x;
+    setCentered(snapFromOffset(x));
+  };
+
   const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const x = e.nativeEvent.contentOffset.x;
-    const next = snapTo(x);
+    const next = snapFromOffset(x);
     onChange(next);
-    scrollRef.current?.scrollTo({ x: (next - min) * TICK, animated: true });
+    setCentered(next);
+    scrollToValue(next, true);
   };
 
   useEffect(() => {
-    const t = setTimeout(() => {
-      scrollRef.current?.scrollTo({ x: (value - min) * TICK, animated: false });
-    }, 50);
+    const t = setTimeout(() => scrollToValue(value, false), 48);
     return () => clearTimeout(t);
-  }, [min, value]);
+  }, [min, max, scrollToValue, value]);
 
-  const unit = value === 1 ? unitSingular : unitPlural;
+  const unit = centered === 1 ? unitSingular : unitPlural;
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.window}>
-        <View style={styles.centerBar} pointerEvents="none" />
+      <View style={styles.trackShell}>
+        <View style={styles.ruleLine} />
         <ScrollView
           ref={scrollRef}
           horizontal
           showsHorizontalScrollIndicator={false}
-          snapToInterval={TICK}
+          snapToInterval={ITEM_W}
           decelerationRate="fast"
+          scrollEventThrottle={16}
+          onScroll={onScroll}
           contentContainerStyle={{
             paddingHorizontal: sidePad,
-            paddingVertical: 20,
+            paddingVertical: 18,
           }}
           onMomentumScrollEnd={onScrollEnd}
           onScrollEndDrag={onScrollEnd}>
-          {Array.from({ length: range }, (_, i) => {
+          {Array.from({ length: count }, (_, i) => {
             const n = min + i;
-            const major = n % 5 === 0;
+            const active = n === centered;
             return (
-              <View key={n} style={styles.tickCol}>
-                <View style={[styles.tick, major ? styles.tickMajor : styles.tickMinor]} />
+              <View key={n} style={styles.cell}>
+                <View style={[styles.capsule, active && styles.capsuleOn]}>
+                  <Text style={[styles.cellText, active ? styles.cellTextOn : styles.cellTextOff]}>
+                    {formatMinuteValue(n)}
+                  </Text>
+                </View>
               </View>
             );
           })}
         </ScrollView>
+        <View style={styles.ruleLine} />
       </View>
-      <View style={styles.capsule}>
-        <Text style={styles.capsuleText}>{value}</Text>
-      </View>
+
       <Text style={styles.unit}>{unit}</Text>
     </View>
   );
@@ -98,64 +124,48 @@ export function TimeRulerPicker({
 const styles = StyleSheet.create({
   wrap: {
     alignItems: 'center',
+    alignSelf: 'stretch',
     marginVertical: theme.spaceMd,
   },
-  window: {
-    width: VISIBLE,
-    height: 120,
-    position: 'relative',
+  trackShell: {
+    alignSelf: 'stretch',
+    backgroundColor: theme.white,
   },
-  centerBar: {
-    position: 'absolute',
-    left: VISIBLE / 2 - 1,
-    top: 8,
-    bottom: 32,
-    width: 3,
-    borderRadius: 2,
-    backgroundColor: theme.brandGreen,
-    zIndex: 2,
+  ruleLine: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    marginHorizontal: theme.spaceLg,
   },
-  tickCol: {
-    width: TICK,
+  cell: {
+    width: ITEM_W,
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    height: 72,
-  },
-  tick: {
-    width: 2,
-    borderRadius: 1,
-    backgroundColor: theme.borderSubtle,
-  },
-  tickMinor: {
-    height: 12,
-  },
-  tickMajor: {
-    height: 22,
-    backgroundColor: theme.textSecondary,
+    justifyContent: 'center',
   },
   capsule: {
-    marginTop: -8,
-    backgroundColor: theme.white,
-    paddingHorizontal: 28,
-    paddingVertical: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
     borderRadius: theme.radiusPill,
-    borderWidth: 2,
-    borderColor: theme.brandGreen,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
+    minWidth: 52,
+    alignItems: 'center',
   },
-  capsuleText: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: theme.textPrimary,
+  capsuleOn: {
+    backgroundColor: theme.yellow,
+  },
+  cellText: {
+    fontFamily: theme.fonts.heading,
+    fontSize: 17,
     fontVariant: ['tabular-nums'],
   },
+  cellTextOn: {
+    color: theme.black,
+  },
+  cellTextOff: {
+    color: theme.grey,
+  },
   unit: {
-    marginTop: theme.spaceSm,
-    fontSize: theme.subtitle,
-    color: theme.textSecondary,
-    fontWeight: '500',
+    marginTop: theme.spaceMd,
+    fontFamily: theme.fonts.body,
+    fontSize: theme.body,
+    color: theme.black,
   },
 });

@@ -22,11 +22,21 @@ Expo’s Metro dev server can still answer **`platform=web`** requests (e.g. ope
 
 `app.config.ts` sets **`platforms: ['ios']`** so the CLI does not treat web as a primary target (no “Web is waiting…” line, `w` is disabled). If you remove those packages, web resolution errors can come back.
 
+### Expo Go (“unknown error” / app won’t open)
+
+`npm start` sets **`EXPO_NO_WIDGETS=1`**. Metro then resolves **`expo-widgets`** to **`stubs/expo-widgets.ts`**, so `requireNativeModule('ExpoWidgets')` never runs (Expo Go does not ship that native module).
+
+- **`npm start`** — use with **Expo Go** (widgets stubbed; screens work).
+- **`npm run start:native`** — real `expo-widgets` JS; use only with a **development build** from `npm run ios`, not Expo Go.
+- Before **`npx expo prebuild`**, run it in a shell **without** `EXPO_NO_WIDGETS` set (`unset EXPO_NO_WIDGETS` or a fresh terminal) so the **expo-widgets** plugin is included.
+
+Also: keep **Expo Go** updated for **SDK 54**, scan the **current** QR (Metro may use 8082/8083 if 8081 is busy), and try **`npx expo start --tunnel`** if the phone cannot reach your Mac’s LAN IP.
+
 ### Expo Go vs development build
 
-**Stumbl uses `expo-widgets`, which does not run in Expo Go.** After `npx expo prebuild` / `npm run ios`, use a **development build** (`npm run ios` or press `s` in the terminal to switch away from Expo Go).
+**Real home screen widgets need a development build** (`npm run ios` after prebuild), not Expo Go.
 
-The home screen widget UI uses **`@expo/ui`** (native module **`ExpoUI`**). That module is **not** in Expo Go. The JS entry no longer imports it on startup in Go, so onboarding and the in-app UI should load. In a **dev build**, if you still see `Cannot find native module ExpoUI`, reinstall native bits and rebuild:
+The widget UI uses **`@expo/ui`** (`ExpoUI`), which is not loaded in Expo Go. In a **dev build**, if you still see `Cannot find native module ExpoUI`, reinstall native bits and rebuild:
 
 ```bash
 npx expo prebuild --platform ios --clean
@@ -38,13 +48,14 @@ npm run ios
 
 | Command | Purpose |
 | --- | --- |
-| `npm start` | Start Metro / Expo dev server |
+| `npm start` | Start Metro with **`EXPO_NO_WIDGETS=1`** (Expo Go–friendly stub) |
+| `npm run start:native` | Start Metro with real `expo-widgets` (dev client / not Expo Go) |
 | `npm run ios` | Prebuild (if needed) and run the iOS app (`expo run:ios`) |
 | `npm run prebuild` | Generate the `ios/` native project (widgets extension included) |
 
 ## Configuration
 
-- **`app.config.ts`** — app name, iOS bundle id (`ca.stumbl.app`), `expo-router`, `expo-widgets` plugin (`StumblWidget`, app group `group.ca.stumbl.app`).
+- **`app.config.ts`** — app name, iOS bundle id (`ca.stumbl.app`), `expo-router`; **`expo-widgets` plugin is omitted when `EXPO_NO_WIDGETS=1`** (default `npm start`).
 - **`lib/config.ts`** — `USE_MOCK_REALTIME` (default `true` for offline dev), GTFS-RT URLs, timeouts, staleness window.
 - **`metro.config.js`** — bundles `.txt` GTFS files from `data/google_transit/`.
 

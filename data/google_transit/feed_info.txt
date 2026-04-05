@@ -1,2 +1,2 @@
 feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version
-LTC,https://www.ltconline.ca/,en,20250101,20261231,1
+London Transit,http://www.londontransit.ca,en,20260201,20260502,2026 February_20260326

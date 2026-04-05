@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BackLink } from '@/components/ui/BackLink';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { TimeRulerPicker } from '@/components/ui/TimeRulerPicker';
 import { theme } from '@/lib/theme';
@@ -23,18 +24,21 @@ export default function WalkingScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.body}>
-        <Text style={styles.title}>How long does it take you to get to the stop?</Text>
-        <TimeRulerPicker
-          min={0}
-          max={30}
-          value={value}
-          onChange={setValue}
-          unitSingular="Minute"
-          unitPlural="Minutes"
-        />
+        <BackLink />
+        <View style={styles.centerBlock}>
+          <Text style={styles.title}>How long does it take you to get to the stop?</Text>
+          <TimeRulerPicker
+            min={0}
+            max={30}
+            value={value}
+            onChange={setValue}
+            unitSingular="Minute"
+            unitPlural="Minutes"
+          />
+        </View>
       </View>
       <View style={styles.footer}>
-        <PrimaryButton title="Continue" onPress={onNext} />
+        <PrimaryButton title="Next" onPress={onNext} />
       </View>
     </SafeAreaView>
   );
@@ -42,15 +46,25 @@ export default function WalkingScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.screenBg },
-  body: { flex: 1, padding: theme.spaceLg, paddingTop: theme.spaceLg },
+  body: {
+    flex: 1,
+    paddingHorizontal: theme.spaceLg,
+    paddingTop: theme.spaceSm,
+  },
+  centerBlock: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingBottom: 40,
+  },
   title: {
-    fontSize: theme.title,
-    fontWeight: '800',
-    color: theme.textPrimary,
+    ...theme.textHeading,
+    textAlign: 'center',
     marginBottom: theme.spaceLg,
+    paddingHorizontal: theme.spaceSm,
   },
   footer: {
     padding: theme.spaceLg,
     paddingBottom: 28,
+    alignItems: 'center',
   },
 });

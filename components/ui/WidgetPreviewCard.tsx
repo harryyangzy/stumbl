@@ -10,7 +10,7 @@ type Props = {
 export function WidgetPreviewCard({ model }: Props) {
   return (
     <View style={styles.card}>
-      <View style={styles.row}>
+      <View style={styles.topRow}>
         {model.routeBadge ? (
           <View style={styles.pill}>
             <Text style={styles.pillText}>{model.routeBadge}</Text>
@@ -28,40 +28,45 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: theme.widgetCardBg,
     borderRadius: theme.radiusLg,
-    padding: theme.spaceLg,
+    paddingVertical: theme.spaceLg,
+    paddingHorizontal: theme.spaceMd,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.borderSubtle,
   },
-  row: {
+  topRow: {
     alignSelf: 'stretch',
     flexDirection: 'row',
+    justifyContent: 'center',
     marginBottom: theme.spaceSm,
   },
   pill: {
     backgroundColor: theme.routePillBg,
-    borderRadius: theme.radiusSm,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
+    borderRadius: theme.radiusPill,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
   },
   pillText: {
-    fontWeight: '700',
-    color: theme.routePillText,
+    fontFamily: theme.fonts.heading,
     fontSize: 14,
+    color: theme.routePillText,
   },
   big: {
+    fontFamily: theme.fonts.heading,
     fontSize: 56,
-    fontWeight: '800',
     color: theme.textPrimary,
     fontVariant: ['tabular-nums'],
   },
   unit: {
-    fontSize: 16,
-    color: theme.textSecondary,
-    fontWeight: '600',
-    marginTop: 4,
+    fontFamily: theme.fonts.body,
+    fontSize: theme.caption,
+    color: theme.grey,
+    marginTop: 6,
   },
   head: {
     marginTop: theme.spaceSm,
-    fontSize: 15,
+    fontFamily: theme.fonts.body,
+    fontSize: theme.body,
     color: theme.textPrimary,
     textAlign: 'center',
   },

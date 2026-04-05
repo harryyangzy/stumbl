@@ -85,8 +85,10 @@ export default function MainScreen() {
   if (!commute) {
     return (
       <SafeAreaView style={styles.safe}>
-        <Text style={styles.title}>No commute saved</Text>
-        <PrimaryButton title="Set up" onPress={() => router.replace('/(onboarding)/welcome')} />
+        <View style={styles.emptyWrap}>
+          <Text style={styles.emptyTitle}>No commute saved</Text>
+          <PrimaryButton title="Set up" onPress={() => router.replace('/(onboarding)/welcome')} />
+        </View>
       </SafeAreaView>
     );
   }
@@ -122,9 +124,32 @@ export default function MainScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.screenBg },
+  emptyWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: theme.spaceLg,
+    alignItems: 'center',
+    gap: theme.spaceMd,
+  },
+  emptyTitle: {
+    fontFamily: theme.fonts.heading,
+    fontSize: theme.title,
+    color: theme.textPrimary,
+    textAlign: 'center',
+  },
   scroll: { padding: theme.spaceLg, paddingBottom: 200 },
-  title: { fontSize: 34, fontWeight: '800', color: theme.textPrimary },
-  sub: { marginTop: theme.spaceXs, fontSize: theme.body, color: theme.textSecondary },
+  title: {
+    fontFamily: theme.fonts.display,
+    fontSize: 40,
+    color: theme.brandGreen,
+    letterSpacing: -0.5,
+  },
+  sub: {
+    marginTop: theme.spaceXs,
+    fontFamily: theme.fonts.body,
+    fontSize: theme.body,
+    color: theme.grey,
+  },
   card: {
     marginTop: theme.spaceLg,
     padding: theme.spaceMd,
@@ -133,14 +158,30 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.borderSubtle,
   },
-  line: { fontSize: 18, fontWeight: '700', color: theme.textPrimary },
-  meta: { marginTop: 8, fontSize: theme.caption, color: theme.textSecondary },
+  line: {
+    fontFamily: theme.fonts.heading,
+    fontSize: theme.body,
+    color: theme.textPrimary,
+  },
+  meta: {
+    marginTop: 8,
+    fontFamily: theme.fonts.body,
+    fontSize: theme.caption,
+    color: theme.grey,
+  },
   previewLabel: {
     marginTop: theme.spaceLg,
-    fontSize: 15,
-    fontWeight: '700',
+    fontFamily: theme.fonts.heading,
+    fontSize: theme.caption,
+    color: theme.textPrimary,
     marginBottom: theme.spaceSm,
   },
-  footer: { position: 'absolute', left: theme.spaceLg, right: theme.spaceLg, bottom: 28 },
+  footer: {
+    position: 'absolute',
+    left: theme.spaceLg,
+    right: theme.spaceLg,
+    bottom: 28,
+    alignItems: 'center',
+  },
   gap: { height: theme.spaceSm },
 });

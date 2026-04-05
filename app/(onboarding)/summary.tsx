@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BackLink } from '@/components/ui/BackLink';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { WidgetPreviewCard } from '@/components/ui/WidgetPreviewCard';
 import { buildGoogleMapsCoordinateUrl } from '@/services/maps/googleMaps';
@@ -10,10 +11,10 @@ import { computeCountdownState } from '@/services/countdown/countdownService';
 import { getStaticGtfsService } from '@/services/gtfs/staticGtfsService';
 import { realtimeGtfsService } from '@/services/realtime/realtimeGtfsService';
 import { countdownToWidgetProps, type WidgetDisplayProps } from '@/services/widget/widgetViewModel';
+import { theme } from '@/lib/theme';
 import type { OnboardingDraft } from '@/store/commuteStore';
 import type { SavedCommute } from '@/types/commute';
 import { useCommuteStore } from '@/store/commuteStore';
-import { theme } from '@/lib/theme';
 
 function draftToSaved(d: OnboardingDraft): SavedCommute | null {
   if (
@@ -113,8 +114,10 @@ export default function SummaryScreen() {
   if (!saved) {
     return (
       <SafeAreaView style={styles.safe}>
-        <Text style={styles.miss}>Finish the earlier steps first.</Text>
-        <PrimaryButton title="Back to stops" onPress={() => router.replace('/(onboarding)/stop')} />
+        <View style={styles.missWrap}>
+          <Text style={styles.miss}>Finish the earlier steps first.</Text>
+          <PrimaryButton title="Back to stops" onPress={() => router.replace('/(onboarding)/stop')} />
+        </View>
       </SafeAreaView>
     );
   }
@@ -122,6 +125,8 @@ export default function SummaryScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
+        <BackLink />
+
         <Text style={styles.title}>You are set</Text>
         <Text style={styles.sub}>Review your commute and add the home screen widget.</Text>
 
@@ -157,14 +162,13 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.screenBg },
   scroll: { padding: theme.spaceLg, paddingBottom: 200 },
   title: {
-    fontSize: theme.title,
-    fontWeight: '800',
-    color: theme.textPrimary,
+    ...theme.textHeading,
     marginBottom: theme.spaceXs,
   },
   sub: {
+    fontFamily: theme.fonts.body,
     fontSize: theme.subtitle,
-    color: theme.textSecondary,
+    color: theme.grey,
     marginBottom: theme.spaceMd,
   },
   card: {
@@ -173,15 +177,23 @@ const styles = StyleSheet.create({
     padding: theme.spaceMd,
     borderWidth: 1,
     borderColor: theme.borderSubtle,
-    gap: 12,
+    gap: 14,
     marginBottom: theme.spaceLg,
   },
   row: { gap: 4 },
-  rowLabel: { fontSize: 13, color: theme.textSecondary, fontWeight: '600' },
-  rowValue: { fontSize: theme.body, color: theme.textPrimary, fontWeight: '600' },
+  rowLabel: {
+    fontFamily: theme.fonts.heading,
+    fontSize: theme.caption,
+    color: theme.grey,
+  },
+  rowValue: {
+    fontFamily: theme.fonts.body,
+    fontSize: theme.body,
+    color: theme.textPrimary,
+  },
   previewLabel: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontFamily: theme.fonts.heading,
+    fontSize: theme.caption,
     color: theme.textPrimary,
     marginBottom: theme.spaceSm,
   },
@@ -190,7 +202,19 @@ const styles = StyleSheet.create({
     left: theme.spaceLg,
     right: theme.spaceLg,
     bottom: 28,
+    alignItems: 'center',
   },
   gap: { height: theme.spaceSm },
-  miss: { padding: theme.spaceLg, fontSize: theme.body, marginBottom: theme.spaceMd },
+  missWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spaceLg,
+    gap: theme.spaceMd,
+  },
+  miss: {
+    fontFamily: theme.fonts.body,
+    fontSize: theme.body,
+    textAlign: 'center',
+  },
 });
