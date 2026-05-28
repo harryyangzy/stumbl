@@ -11,6 +11,7 @@ import { computeCountdownState } from '@/services/countdown/countdownService';
 import { getStaticGtfsService } from '@/services/gtfs/staticGtfsService';
 import { realtimeGtfsService } from '@/services/realtime/realtimeGtfsService';
 import { countdownToWidgetProps, type WidgetDisplayProps } from '@/services/widget/widgetViewModel';
+import { formatMinutesCompact } from '@/lib/formatCommuteDuration';
 import { theme } from '@/lib/theme';
 import { useCommuteStore } from '@/store/commuteStore';
 
@@ -105,8 +106,8 @@ export default function MainScreen() {
         <View style={styles.card}>
           <Text style={styles.line}>{commute.stopName}</Text>
           <Text style={styles.meta}>
-            Route {commute.routeShortName} · Walk {commute.walkingMinutes}m · Buffer{' '}
-            {commute.bufferMinutes}m
+            Route {commute.routeShortName} · Walk {formatMinutesCompact(commute.walkingMinutes)} ·
+            Buffer {formatMinutesCompact(commute.bufferMinutes)}
           </Text>
         </View>
 
@@ -127,7 +128,8 @@ const styles = StyleSheet.create({
   emptyWrap: {
     flex: 1,
     justifyContent: 'center',
-    padding: theme.spaceLg,
+    paddingVertical: theme.spaceLg,
+    paddingHorizontal: theme.screenEdge,
     alignItems: 'center',
     gap: theme.spaceMd,
   },
@@ -137,7 +139,11 @@ const styles = StyleSheet.create({
     color: theme.textPrimary,
     textAlign: 'center',
   },
-  scroll: { padding: theme.spaceLg, paddingBottom: 200 },
+  scroll: {
+    paddingHorizontal: theme.screenEdge,
+    paddingTop: theme.spaceLg,
+    paddingBottom: 200,
+  },
   title: {
     fontFamily: theme.fonts.display,
     fontSize: 40,
@@ -145,13 +151,13 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   sub: {
-    marginTop: theme.spaceXs,
+    marginTop: theme.headingLineGap,
     fontFamily: theme.fonts.body,
     fontSize: theme.body,
     color: theme.grey,
   },
   card: {
-    marginTop: theme.spaceLg,
+    marginTop: theme.headingToControl,
     padding: theme.spaceMd,
     backgroundColor: theme.white,
     borderRadius: theme.radiusMd,
@@ -178,8 +184,8 @@ const styles = StyleSheet.create({
   },
   footer: {
     position: 'absolute',
-    left: theme.spaceLg,
-    right: theme.spaceLg,
+    left: theme.screenEdge,
+    right: theme.screenEdge,
     bottom: 28,
     alignItems: 'center',
   },

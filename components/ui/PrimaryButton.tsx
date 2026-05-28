@@ -13,7 +13,7 @@ import { theme } from '@/lib/theme';
 
 type Props = PressableProps & {
   title: string;
-  variant?: 'primary' | 'secondary' | 'ctaYellow';
+  variant?: 'primary' | 'secondary' | 'ctaYellow' | 'ctaGreen' | 'ctaOutline';
   loading?: boolean;
   style?: StyleProp<ViewStyle>;
 };
@@ -26,26 +26,72 @@ export function PrimaryButton({
   style,
   ...rest
 }: Props) {
+  const inactive = !!(disabled || loading);
   const isYellow = variant === 'ctaYellow';
+  const isCtaGreen = variant === 'ctaGreen';
+  const isCtaOutline = variant === 'ctaOutline';
   const isPrimary = variant === 'primary';
 
   if (isYellow) {
     return (
       <Pressable
         accessibilityRole="button"
-        accessibilityState={{ disabled: !!(disabled || loading) }}
-        disabled={disabled || loading}
+        accessibilityState={{ disabled: inactive }}
+        disabled={inactive}
         style={({ pressed }) => [
-          styles.yellowHit,
-          (disabled || loading) && styles.disabled,
-          pressed && styles.yellowHitPressed,
+          styles.ctaHit,
+          pressed && !inactive && styles.ctaHitPressed,
         ]}
         {...rest}>
-        <View style={[styles.yellowPill, style]}>
+        <View style={[styles.yellowPill, inactive && styles.pillEmpty, style]}>
           {loading ? (
             <ActivityIndicator color={theme.black} />
           ) : (
-            <Text style={[styles.label, styles.labelYellow]}>{title}</Text>
+            <Text style={[styles.label, inactive ? styles.labelBlack : styles.labelYellow]}>{title}</Text>
+          )}
+        </View>
+      </Pressable>
+    );
+  }
+
+  if (isCtaGreen) {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ disabled: inactive }}
+        disabled={inactive}
+        style={({ pressed }) => [
+          styles.ctaHit,
+          pressed && !inactive && styles.ctaHitPressed,
+        ]}
+        {...rest}>
+        <View style={[styles.greenPill, inactive && styles.pillEmpty, style]}>
+          {loading ? (
+            <ActivityIndicator color={theme.black} />
+          ) : (
+            <Text style={[styles.label, inactive ? styles.labelBlack : styles.labelPrimary]}>{title}</Text>
+          )}
+        </View>
+      </Pressable>
+    );
+  }
+
+  if (isCtaOutline) {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ disabled: inactive }}
+        disabled={inactive}
+        style={({ pressed }) => [
+          styles.ctaHit,
+          pressed && !inactive && styles.ctaHitPressed,
+        ]}
+        {...rest}>
+        <View style={[styles.outlinePill, inactive && styles.pillEmpty, style]}>
+          {loading ? (
+            <ActivityIndicator color={theme.black} />
+          ) : (
+            <Text style={[styles.label, styles.labelBlack]}>{title}</Text>
           )}
         </View>
       </Pressable>
@@ -55,26 +101,25 @@ export function PrimaryButton({
   return (
     <Pressable
       accessibilityRole="button"
-      disabled={disabled || loading}
+      disabled={inactive}
       style={({ pressed }) => [
         styles.base,
         variant === 'secondary' && styles.secondary,
-        (disabled || loading) && styles.disabled,
+        variant === 'secondary' && inactive && styles.secondaryInactive,
         style,
-        isPrimary && styles.primary,
-        pressed && isPrimary && styles.pressedPrimary,
+        isPrimary && !inactive && styles.primary,
+        isPrimary && inactive && styles.primaryInactive,
+        pressed && isPrimary && !inactive && styles.pressedPrimary,
       ]}
       {...rest}>
       {loading ? (
-        <ActivityIndicator
-          color={isPrimary ? theme.offWhite : theme.brandGreen}
-        />
+        <ActivityIndicator color={inactive ? theme.black : isPrimary ? theme.offWhite : theme.brandGreen} />
       ) : (
         <Text
           style={[
             styles.label,
-            isPrimary && styles.labelPrimary,
-            variant === 'secondary' && styles.labelSecondary,
+            isPrimary && (inactive ? styles.labelBlack : styles.labelPrimary),
+            variant === 'secondary' && (inactive ? styles.labelBlack : styles.labelSecondary),
           ]}>
           {title}
         </Text>
@@ -84,10 +129,10 @@ export function PrimaryButton({
 }
 
 const styles = StyleSheet.create({
-  yellowHit: {
+  ctaHit: {
     alignSelf: 'center',
   },
-  yellowHitPressed: {
+  ctaHitPressed: {
     opacity: 0.9,
   },
   /** Background lives on this inner view so iOS always paints the pill (Pressable fill can fail). */
@@ -103,6 +148,33 @@ const styles = StyleSheet.create({
     minHeight: 40,
     overflow: 'hidden',
   },
+  greenPill: {
+    backgroundColor: theme.brandGreen,
+    paddingVertical: 10,
+    paddingHorizontal: 22,
+    borderRadius: theme.radiusPill,
+    borderWidth: 1,
+    borderColor: theme.black,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 40,
+    overflow: 'hidden',
+  },
+  outlinePill: {
+    backgroundColor: 'transparent',
+    paddingVertical: 10,
+    paddingHorizontal: 22,
+    borderRadius: theme.radiusPill,
+    borderWidth: 1,
+    borderColor: theme.black,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 40,
+    overflow: 'hidden',
+  },
+  pillEmpty: {
+    backgroundColor: 'transparent',
+  },
   base: {
     alignSelf: 'center',
     paddingVertical: 8,
@@ -115,16 +187,21 @@ const styles = StyleSheet.create({
   primary: {
     backgroundColor: theme.brandGreen,
   },
+  primaryInactive: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: theme.black,
+  },
   secondary: {
     backgroundColor: 'transparent',
     borderWidth: 2,
     borderColor: theme.brandGreen,
   },
+  secondaryInactive: {
+    borderColor: theme.black,
+  },
   pressedPrimary: {
     backgroundColor: theme.brandGreenPressed,
-  },
-  disabled: {
-    opacity: 0.45,
   },
   label: {
     fontFamily: theme.fonts.heading,
@@ -138,5 +215,8 @@ const styles = StyleSheet.create({
   },
   labelSecondary: {
     color: theme.brandGreen,
+  },
+  labelBlack: {
+    color: theme.black,
   },
 });

@@ -7,16 +7,23 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { theme } from '@/lib/theme';
 import { useCommuteStore } from '@/store/commuteStore';
 
-const LOGO_STROKE_OFFSETS: [number, number][] = [
-  [-1, -1],
-  [0, -1],
-  [1, -1],
-  [-1, 0],
-  [1, 0],
-  [-1, 1],
-  [0, 1],
-  [1, 1],
-];
+/** Chebyshev ring at each radius for a solid black outline around the wordmark. */
+function logoStrokeOffsets(radii: number[]): [number, number][] {
+  const out: [number, number][] = [];
+  for (const r of radii) {
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        if (dx === 0 && dy === 0) continue;
+        if (Math.max(Math.abs(dx), Math.abs(dy)) === r) {
+          out.push([dx, dy]);
+        }
+      }
+    }
+  }
+  return out;
+}
+
+const LOGO_STROKE_OFFSETS = logoStrokeOffsets([1]);
 
 function StumblWordmark() {
   return (
@@ -56,16 +63,17 @@ export default function WelcomeScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar style="light" />
-      <View style={styles.center}>
-        <View style={styles.brandBlock}>
-          <StumblWordmark />
-          <View style={styles.tagBox}>
-            <Text style={styles.tag}>Stop waiting for the bus</Text>
+      <View style={styles.welcomeColumn}>
+        <View style={styles.center}>
+          <View style={styles.brandBlock}>
+            <StumblWordmark />
+            <View style={[styles.tagBox, { marginTop: theme.welcomeLogoToTag - 4 }]}>
+              <Text style={styles.tag}>Stop waiting for the bus</Text>
+            </View>
           </View>
+          <View style={styles.ctaSpacer} />
+          <PrimaryButton title="Get Started" variant="ctaYellow" onPress={onStart} />
         </View>
-      </View>
-      <View style={styles.footer}>
-        <PrimaryButton title="Get Started" variant="ctaYellow" onPress={onStart} />
       </View>
     </SafeAreaView>
   );
@@ -76,14 +84,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.brandGreen,
   },
-  center: {
+  welcomeColumn: {
     flex: 1,
+    paddingHorizontal: theme.screenEdge,
     justifyContent: 'center',
-    paddingHorizontal: theme.spaceLg,
+    paddingBottom: 32,
+  },
+  center: {
+    width: '100%',
     alignItems: 'center',
   },
   brandBlock: {
     alignItems: 'center',
+  },
+  ctaSpacer: {
+    height: theme.welcomeTagToCta,
   },
   markWrap: {
     alignItems: 'center',
@@ -107,7 +122,6 @@ const styles = StyleSheet.create({
     color: theme.offWhite,
   },
   tagBox: {
-    marginTop: 12,
     alignSelf: 'center',
     backgroundColor: theme.white,
     borderWidth: 1,
@@ -120,10 +134,5 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.body,
     fontSize: theme.body,
     color: theme.black,
-  },
-  footer: {
-    padding: theme.spaceLg,
-    paddingBottom: 32,
-    alignItems: 'center',
   },
 });

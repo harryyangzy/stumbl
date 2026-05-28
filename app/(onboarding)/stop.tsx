@@ -8,8 +8,8 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  useWindowDimensions,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -21,16 +21,28 @@ import { getStaticGtfsService } from '@/services/gtfs/staticGtfsService';
 import type { GtfsStop } from '@/types/gtfs';
 import { useCommuteStore } from '@/store/commuteStore';
 
-/** Pull results card up under the pill (visual overlap). */
-const RESULTS_CARD_OVERLAP = 24;
-export default function StopScreen() {
-  const { width: windowWidth } = useWindowDimensions();
-  const searchPillWidth = Math.max(0, windowWidth - theme.spaceLg * 2);
-  const resultsTopWhite = Math.round(searchPillWidth / 2);
+/**
+ * How far the results panel tucks under the search pill (negative margin + matching paddingTop).
+ * Reduced vs earlier so less white shows above the list behind the pill.
+ */
+const RESULTS_CARD_OVERLAP = 16;
+/** Space reserved for the absolute back row so the title block doesn’t sit under it. */
+const SCROLL_TOP_FOR_BACK = 44;
 
+/** Tighter gap under subtitle (“enter your address…”) per spec (−2px vs headingToControl). */
+const SUB_TO_SEARCH_GAP = theme.headingToControl - 2;
+/** Title → subtitle: 2px tighter than headingLineGap. */
+const TITLE_TO_SUB_GAP = theme.headingLineGap - 2;
+
+export default function StopScreen() {
   const router = useRouter();
+  const { height: windowHeight } = useWindowDimensions();
   const draft = useCommuteStore((s) => s.draft);
   const setDraft = useCommuteStore((s) => s.setDraft);
+
+  /** Push main block down from top (~⅓ screen minus 100px vs earlier tuning). */
+  const scrollContentPaddingTop =
+    SCROLL_TOP_FOR_BACK + Math.max(0, Math.round(windowHeight / 3) - 100);
 
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
@@ -55,7 +67,7 @@ export default function StopScreen() {
     try {
       const svc = await getStaticGtfsService();
       if (seq !== searchSeq.current) return;
-      setResults(svc.searchStops(query, 5));
+      setResults(svc.searchStops(query, 4));
     } catch {
       if (seq === searchSeq.current) setResults([]);
     }
@@ -90,9 +102,15 @@ export default function StopScreen() {
     !selectedId || q.trim() !== (draft.stopName ?? '').trim();
 
   const hasTypedQuery = q.trim().length > 0;
-  /** No browse list when empty — only show card while loading, typing, or stop chosen (compact). */
-  const showResultsCard =
-    loading || (selectedId && !showSuggestions) || (showSuggestions && hasTypedQuery);
+  /**
+   * Only show the panel under the pill while actively searching (incl. initial load spinner).
+   * When a stop is selected and the field matches, hide the panel so it doesn’t stack under the
+   * pill (double stroke / elevation overlap) — does not change list layout while typing.
+   */
+  const showResultsCard = showSuggestions && (loading || hasTypedQuery);
+
+  const hasResultsList =
+    showResultsCard && !loading && showSuggestions && hasTypedQuery && results.length > 0;
 
   const onPick = (s: GtfsStop) => {
     Keyboard.dismiss();
@@ -110,65 +128,72 @@ export default function StopScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.main}>
-        <ScrollView
-          style={styles.scrollArea}
-          keyboardShouldPersistTaps="always"
-          keyboardDismissMode="on-drag"
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}>
-          <BackLink label="< Home" onPress={() => router.replace('/(onboarding)/welcome')} />
-          <Text style={styles.title}>Find your transit stop</Text>
-          <Text style={styles.sub}>Enter your address or stop name</Text>
-
-          <View style={styles.pillLayer}>
-            <SearchField value={q} onChangeText={setQ} placeholder="Search stops" pillOutline />
+      <View style={styles.screenBody}>
+        <View style={styles.main}>
+          <View style={styles.backSlot}>
+            <BackLink label="< Home" onPress={() => router.replace('/(onboarding)/welcome')} />
           </View>
 
-          {showResultsCard ? (
-            <View
-              style={[
-                styles.resultsCard,
-                selectedId ? styles.resultsCardFlushTop : null,
-                selectedId ? styles.resultsCardSelectedBody : null,
-                {
-                  paddingTop:
-                    selectedId && !showSuggestions
-                      ? 8
-                      : RESULTS_CARD_OVERLAP + resultsTopWhite,
-                },
-              ]}>
-              {loading && showSuggestions ? (
-                <ActivityIndicator style={styles.loaderInCard} color={theme.brandGreen} />
-              ) : null}
+          <ScrollView
+            style={styles.scrollArea}
+            keyboardShouldPersistTaps="always"
+            keyboardDismissMode="on-drag"
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingTop: scrollContentPaddingTop },
+              hasResultsList && styles.scrollContentExtraBottom,
+              selectedId && !showSuggestions && styles.scrollContentWithNext,
+            ]}
+            showsVerticalScrollIndicator={false}>
+            <Text style={styles.title}>Find your transit stop</Text>
+            <Text style={styles.sub}>Enter your address or stop name</Text>
 
-              {!loading && showSuggestions && hasTypedQuery && results.length === 0 ? (
-                <View style={styles.emptyInCard} />
-              ) : null}
-
-              {!loading &&
-                showSuggestions &&
-                hasTypedQuery &&
-                results.map((s, index) => {
-                  const isLast = index === results.length - 1;
-                  return (
-                    <TouchableOpacity
-                      key={s.stopId}
-                      activeOpacity={0.75}
-                      onPress={() => onPick(s)}
-                      style={[styles.row, !isLast && styles.rowDivider]}>
-                      <View style={styles.rowText}>
-                        <Text style={styles.stopName}>{s.stopName}</Text>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
+            <View style={styles.pillLayer}>
+              <SearchField value={q} onChangeText={setQ} placeholder="Search stops" pillOutline />
             </View>
-          ) : null}
-        </ScrollView>
-      </View>
-      <View style={styles.footer}>
-        <PrimaryButton title="Next" variant="ctaYellow" onPress={goNext} />
+
+            {showResultsCard ? (
+              <View style={styles.resultsCard}>
+                <View style={[styles.resultsCardClip, { paddingTop: RESULTS_CARD_OVERLAP }]}>
+                  {loading && showSuggestions ? (
+                    <ActivityIndicator style={styles.loaderInCard} color={theme.brandGreen} />
+                  ) : null}
+
+                  {!loading && showSuggestions && hasTypedQuery && results.length === 0 ? (
+                    <View style={styles.emptyInCard} />
+                  ) : null}
+
+                  {!loading &&
+                    showSuggestions &&
+                    hasTypedQuery &&
+                    results.map((s, index) => {
+                      const isLast = index === results.length - 1;
+                      return (
+                        <TouchableOpacity
+                          key={s.stopId}
+                          activeOpacity={0.75}
+                          onPress={() => onPick(s)}
+                          style={[styles.row, !isLast && styles.rowDivider]}>
+                          <View style={styles.rowText}>
+                            <Text style={styles.stopName}>{s.stopName}</Text>
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                </View>
+              </View>
+            ) : null}
+          </ScrollView>
+        </View>
+
+        {selectedId && !showSuggestions ? (
+          <>
+            <View style={styles.footerGap} />
+            <View style={styles.footer}>
+              <PrimaryButton title="Next" variant="ctaGreen" onPress={goNext} />
+            </View>
+          </>
+        ) : null}
       </View>
     </SafeAreaView>
   );
@@ -176,46 +201,77 @@ export default function StopScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.screenBg },
-  /** Same role as welcome `center`: takes remaining space above the footer. */
-  main: { flex: 1, minHeight: 0 },
-  scrollArea: { flex: 1 },
+  screenBody: { flex: 1, flexDirection: 'column' },
+  main: { flex: 1, minHeight: 0, flexDirection: 'column' },
+  backSlot: {
+    position: 'absolute',
+    top: theme.spaceSm,
+    left: theme.screenEdge,
+    zIndex: 10,
+  },
+  scrollArea: { flex: 1, minHeight: 0 },
+  /** flexGrow + flex-start: header stays fixed at top when results appear (no vertical re-centering). */
   scrollContent: {
-    paddingHorizontal: theme.spaceLg,
+    flexGrow: 1,
+    justifyContent: 'flex-start',
+    paddingHorizontal: theme.screenEdge,
     paddingBottom: theme.spaceLg,
+  },
+  /** Room to scroll the results card fully above the fold (bottom stroke + last rows). */
+  scrollContentExtraBottom: {
+    paddingBottom: theme.spaceLg + 100,
+  },
+  /** When Next is shown, avoid double bottom gap; footer handles spacing. */
+  scrollContentWithNext: {
+    paddingBottom: theme.spaceSm,
   },
   title: {
     ...theme.textHeading,
-    marginBottom: theme.spaceXs,
+    textAlign: 'left',
+    alignSelf: 'stretch',
+    marginBottom: TITLE_TO_SUB_GAP,
   },
   sub: {
     fontFamily: theme.fonts.body,
     fontSize: theme.subtitle,
     color: theme.grey,
-    marginBottom: theme.spaceMd,
+    textAlign: 'left',
+    alignSelf: 'stretch',
+    marginBottom: SUB_TO_SEARCH_GAP,
   },
   pillLayer: {
     zIndex: 2,
     position: 'relative',
-    ...(Platform.OS === 'android' ? { elevation: 4 } : {}),
+    alignSelf: 'stretch',
+    ...(Platform.OS === 'android' ? { elevation: 6 } : {}),
   },
+  /**
+   * Stroke on this shell; overflow hidden lives on `resultsCardClip` so list clipping doesn’t
+   * eat the bottom corner border (common RN issue when both are on the same view).
+   */
   resultsCard: {
     marginTop: -RESULTS_CARD_OVERLAP,
+    marginBottom: 14,
     zIndex: 1,
+    alignSelf: 'stretch',
     backgroundColor: theme.white,
-    borderRadius: theme.radiusMd,
-    borderWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
     borderColor: theme.black,
+    borderBottomLeftRadius: theme.radiusMd,
+    borderBottomRightRadius: theme.radiusMd,
+    ...(Platform.OS === 'ios'
+      ? { borderCurve: 'continuous' as const }
+      : {}),
+  },
+  resultsCardClip: {
     overflow: 'hidden',
-  },
-  /** Square top corners when a stop is chosen (meets pill visually). */
-  resultsCardFlushTop: {
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
-  },
-  /** Compact card when list is hidden after selection. */
-  resultsCardSelectedBody: {
-    minHeight: 8,
-    paddingBottom: theme.spaceSm,
+    borderBottomLeftRadius: theme.radiusMd,
+    borderBottomRightRadius: theme.radiusMd,
+    ...(Platform.OS === 'ios'
+      ? { borderCurve: 'continuous' as const }
+      : {}),
   },
   loaderInCard: {
     paddingVertical: theme.spaceLg,
@@ -226,7 +282,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.white,
   },
   row: {
-    paddingVertical: 16,
+    paddingVertical: 8,
     paddingHorizontal: theme.spaceMd,
     backgroundColor: theme.white,
   },
@@ -236,14 +292,19 @@ const styles = StyleSheet.create({
   },
   rowText: { gap: 4 },
   stopName: {
-    fontFamily: theme.fonts.heading,
+    fontFamily: theme.fonts.body,
     fontSize: theme.body,
     color: theme.textPrimary,
   },
-  /** Identical to welcome.tsx footer (Get Started). */
+  footerGap: {
+    height: theme.scrollContentAboveFooter,
+    flexShrink: 0,
+  },
   footer: {
-    padding: theme.spaceLg,
+    flexShrink: 0,
+    paddingTop: 0,
     paddingBottom: 32,
+    paddingHorizontal: theme.screenEdge,
     alignItems: 'center',
   },
 });

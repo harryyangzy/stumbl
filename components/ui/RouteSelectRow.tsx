@@ -27,23 +27,25 @@ export function RouteSelectRow({
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.pill, pressed && styles.pressed]}
+      style={({ pressed }) => (pressed ? styles.pressed : undefined)}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: selected }}>
-      <View style={styles.leftCluster}>
-        <View style={styles.lineBox}>
-          <Text style={styles.lineBoxText}>{routeShortName}</Text>
+      <View style={styles.pill}>
+        <View style={styles.leftCluster}>
+          <View style={styles.lineBox}>
+            <Text style={styles.lineBoxText}>{routeShortName}</Text>
+          </View>
+          <Text
+            style={styles.destination}
+            numberOfLines={2}
+            {...(Platform.OS === 'android' ? { includeFontPadding: false } : {})}>
+            {destinationLabel}
+          </Text>
         </View>
-        <Text
-          style={styles.destination}
-          numberOfLines={2}
-          {...(Platform.OS === 'android' ? { includeFontPadding: false } : {})}>
-          {destinationLabel}
-        </Text>
-      </View>
-      <View style={styles.checkboxAlign}>
-        <View style={styles.checkboxOuter}>
-          {selected ? <View style={styles.checkboxInner} /> : null}
+        <View style={styles.checkboxAlign}>
+          <View style={[styles.checkboxOuter, selected && styles.checkboxOuterSelected]}>
+            {selected ? <View style={styles.checkboxInner} /> : null}
+          </View>
         </View>
       </View>
     </Pressable>
@@ -51,6 +53,7 @@ export function RouteSelectRow({
 }
 
 const styles = StyleSheet.create({
+  /** White fill + grey stroke; holds line number, destination, checkbox. */
   pill: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -58,10 +61,10 @@ const styles = StyleSheet.create({
     backgroundColor: theme.white,
     borderRadius: theme.radiusPill,
     borderWidth: 1,
-    borderColor: theme.grey,
-    paddingVertical: 14,
-    paddingHorizontal: theme.spaceMd,
-    marginBottom: theme.spaceSm,
+    borderColor: 'rgba(0,0,0,0.2)',
+    paddingVertical: 8,
+    paddingHorizontal: theme.spaceSm,
+    overflow: 'hidden',
   },
   pressed: {
     opacity: 0.88,
@@ -115,6 +118,9 @@ const styles = StyleSheet.create({
     backgroundColor: theme.white,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  checkboxOuterSelected: {
+    borderColor: theme.brandGreen,
   },
   checkboxInner: {
     width: CHECKBOX_INNER,

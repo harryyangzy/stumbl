@@ -1,16 +1,21 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BackLink } from '@/components/ui/BackLink';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { WidgetPreviewCard } from '@/components/ui/WidgetPreviewCard';
+import { loadStumblWidget } from '@/lib/stumblWidgetLoader';
 import { buildGoogleMapsCoordinateUrl } from '@/services/maps/googleMaps';
 import { computeCountdownState } from '@/services/countdown/countdownService';
 import { getStaticGtfsService } from '@/services/gtfs/staticGtfsService';
 import { realtimeGtfsService } from '@/services/realtime/realtimeGtfsService';
-import { countdownToWidgetProps, type WidgetDisplayProps } from '@/services/widget/widgetViewModel';
+import {
+  countdownToWidgetProps,
+  widgetPlaceholderProps,
+  type WidgetDisplayProps,
+} from '@/services/widget/widgetViewModel';
 import { theme } from '@/lib/theme';
 import type { OnboardingDraft } from '@/store/commuteStore';
 import type { SavedCommute } from '@/types/commute';
@@ -42,20 +47,12 @@ function draftToSaved(d: OnboardingDraft): SavedCommute | null {
   };
 }
 
-const emptyPreview: WidgetDisplayProps = {
-  primaryValue: '—',
-  unitLabel: 'Preview',
-  routeBadge: '',
-  headsign: '',
-  state: 'empty',
-  mapsUrl: '',
-};
+const emptyPreview: WidgetDisplayProps = widgetPlaceholderProps;
 
 export default function SummaryScreen() {
   const router = useRouter();
   const draft = useCommuteStore((s) => s.draft);
   const saveCommute = useCommuteStore((s) => s.saveCommute);
-  const beginEditSetup = useCommuteStore((s) => s.beginEditSetup);
 
   const [preview, setPreview] = useState<WidgetDisplayProps>(emptyPreview);
 
@@ -96,9 +93,13 @@ export default function SummaryScreen() {
 
   const saved = draftToSaved(draft);
 
-  const onAddToHome = () => {
+  const onAddToHome = async () => {
     if (!saved) return;
     saveCommute(saved);
+
+    const widget = await loadStumblWidget();
+    widget?.updateSnapshot(preview);
+
     Alert.alert(
       'Add the widget',
       'On your Home Screen, touch and hold an empty area, tap + in the corner, then search for Stumbl.',
@@ -106,17 +107,17 @@ export default function SummaryScreen() {
     );
   };
 
-  const onEdit = () => {
-    beginEditSetup();
-    router.push('/(onboarding)/stop');
-  };
-
   if (!saved) {
     return (
       <SafeAreaView style={styles.safe}>
-        <View style={styles.missWrap}>
-          <Text style={styles.miss}>Finish the earlier steps first.</Text>
-          <PrimaryButton title="Back to stops" onPress={() => router.replace('/(onboarding)/stop')} />
+        <View style={styles.missOuter}>
+          <View style={styles.backSlot}>
+            <BackLink />
+          </View>
+          <View style={styles.missWrap}>
+            <Text style={styles.miss}>Finish the earlier steps first.</Text>
+            <PrimaryButton title="Back to stops" onPress={() => router.replace('/(onboarding)/stop')} />
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -124,92 +125,66 @@ export default function SummaryScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <BackLink />
-
-        <Text style={styles.title}>You are set</Text>
-        <Text style={styles.sub}>Review your commute and add the home screen widget.</Text>
-
-        <View style={styles.card}>
-          <Row label="Stop" value={saved.stopName} />
-          <Row label="Route" value={`${saved.routeShortName} · ${saved.headsign ?? ''}`} />
-          <Row label="Walk" value={`${saved.walkingMinutes} min`} />
-          <Row label="Buffer" value={`${saved.bufferMinutes} min`} />
+      <View style={styles.main}>
+        <View style={styles.backSlot}>
+          <BackLink />
         </View>
-
-        <Text style={styles.previewLabel}>Widget preview</Text>
-        <WidgetPreviewCard model={preview} />
-      </ScrollView>
-      <View style={styles.actions}>
-        <PrimaryButton title="Add to Home" onPress={onAddToHome} />
-        <View style={styles.gap} />
-        <PrimaryButton title="Edit setup" variant="secondary" onPress={onEdit} />
+        <View style={styles.content}>
+          <Text style={styles.title}>See how long until you need to leave at a glance.</Text>
+          <WidgetPreviewCard model={preview} />
+        </View>
+        <View style={styles.actions}>
+          <PrimaryButton title="Add to Home" variant="ctaGreen" style={styles.addButton} onPress={onAddToHome} />
+        </View>
       </View>
     </SafeAreaView>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.row}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={styles.rowValue}>{value}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.screenBg },
-  scroll: { padding: theme.spaceLg, paddingBottom: 200 },
+  main: { flex: 1, minHeight: 0 },
+  backSlot: {
+    position: 'absolute',
+    top: 20,
+    left: 26,
+    zIndex: 10,
+  },
+  content: {
+    position: 'absolute',
+    top: 180,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    gap: 25,
+  },
   title: {
-    ...theme.textHeading,
-    marginBottom: theme.spaceXs,
-  },
-  sub: {
-    fontFamily: theme.fonts.body,
-    fontSize: theme.subtitle,
-    color: theme.grey,
-    marginBottom: theme.spaceMd,
-  },
-  card: {
-    backgroundColor: theme.white,
-    borderRadius: theme.radiusMd,
-    padding: theme.spaceMd,
-    borderWidth: 1,
-    borderColor: theme.borderSubtle,
-    gap: 14,
-    marginBottom: theme.spaceLg,
-  },
-  row: { gap: 4 },
-  rowLabel: {
     fontFamily: theme.fonts.heading,
-    fontSize: theme.caption,
-    color: theme.grey,
-  },
-  rowValue: {
-    fontFamily: theme.fonts.body,
-    fontSize: theme.body,
-    color: theme.textPrimary,
-  },
-  previewLabel: {
-    fontFamily: theme.fonts.heading,
-    fontSize: theme.caption,
-    color: theme.textPrimary,
-    marginBottom: theme.spaceSm,
+    fontSize: 18,
+    color: theme.black,
+    lineHeight: 22,
+    textAlign: 'center',
+    width: 213,
   },
   actions: {
     position: 'absolute',
-    left: theme.spaceLg,
-    right: theme.spaceLg,
-    bottom: 28,
+    top: 488,
+    left: 0,
+    right: 0,
     alignItems: 'center',
   },
-  gap: { height: theme.spaceSm },
+  addButton: {
+    width: 240,
+    minHeight: 40,
+    paddingVertical: 8,
+  },
+  missOuter: { flex: 1 },
   missWrap: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: theme.spaceLg,
+    paddingVertical: theme.spaceLg,
+    paddingHorizontal: theme.screenEdge,
     gap: theme.spaceMd,
   },
   miss: {

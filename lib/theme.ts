@@ -42,6 +42,19 @@ export const theme = {
   spaceMd: 20,
   spaceLg: 24,
 
+  /** Horizontal inset from screen left/right (onboarding + main). */
+  screenEdge: 45,
+  /** Space between stacked heading lines (e.g. title + subtitle). */
+  headingLineGap: 4,
+  /** Space from subtitle (or last heading line) to the next block (search, list, picker). */
+  headingToControl: 10,
+  /** Scroll content bottom padding above the fixed footer CTA. */
+  scrollContentAboveFooter: 80,
+  /** Welcome: logo wordmark to tagline box. */
+  welcomeLogoToTag: 0,
+  /** Welcome: tagline block to Get Started. */
+  welcomeTagToCta: 65,
+
   /** Heading: Parabolica Medium 24 */
   title: 24,
   /** Body: Parabolica Regular 16 */

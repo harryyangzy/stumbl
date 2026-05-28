@@ -10,6 +10,42 @@ export type WidgetDisplayProps = {
   mapsUrl: string;
 };
 
+export const widgetPlaceholderProps: WidgetDisplayProps = {
+  primaryValue: '90',
+  unitLabel: 'seconds',
+  routeBadge: '102',
+  headsign: '',
+  state: 'leave_in',
+  mapsUrl: '',
+};
+
+export function normalizeWidgetProps(props?: Partial<WidgetDisplayProps> | null): WidgetDisplayProps {
+  return {
+    ...widgetPlaceholderProps,
+    ...props,
+  };
+}
+
+export function getWidgetPrimaryUnitLabel(props: Partial<WidgetDisplayProps>) {
+  if (props.state === 'due') return 'bus due';
+  if (props.state === 'empty') return 'setup';
+  if (props.primaryValue?.toLowerCase() === 'now') return 'leave now';
+  return props.primaryValue === '1' ? 'minute' : 'minutes';
+}
+
+export function getWidgetNextBusText(props: Partial<WidgetDisplayProps>) {
+  if (!props.routeBadge) return props.unitLabel || props.headsign;
+
+  const busMinutes = props.unitLabel?.match(/bus in (\d+) min/i)?.[1];
+  if (busMinutes) {
+    return `${props.routeBadge} in ${busMinutes} ${busMinutes === '1' ? 'minute' : 'minutes'}`;
+  }
+
+  if (props.state === 'due') return `${props.routeBadge} due now`;
+  if (props.state === 'fallback') return 'Realtime unavailable';
+  return props.headsign || props.unitLabel;
+}
+
 export function countdownToWidgetProps(state: CountdownState): WidgetDisplayProps {
   const badge = state.routeShort || '—';
   const head = state.headsign || badge;

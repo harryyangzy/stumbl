@@ -112,7 +112,6 @@ const styles = StyleSheet.create({
   wrapPillOutline: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: theme.spaceSm,
     borderRadius: theme.radiusPill,
     borderWidth: 1,
     borderColor: theme.black,
@@ -128,6 +127,7 @@ const styles = StyleSheet.create({
     fontSize: theme.body,
     color: theme.textPrimary,
     paddingVertical: 0,
+    paddingRight: 6,
   },
   iconSlotPill: {
     paddingLeft: 4,
