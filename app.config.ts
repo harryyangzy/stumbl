@@ -10,7 +10,7 @@ const widgetPlugin = [
         name: 'StumblWidget',
         displayName: 'Stumbl',
         description: 'Leave for the bus on time',
-        supportedFamilies: ['systemSmall', 'systemMedium'],
+        supportedFamilies: ['systemSmall'],
       },
     ],
   },

@@ -19,6 +19,10 @@ export const widgetPlaceholderProps: WidgetDisplayProps = {
   mapsUrl: '',
 };
 
+function formatWidgetPrimaryValue(value: number) {
+  return String(Math.max(0, value)).padStart(2, '0');
+}
+
 export function normalizeWidgetProps(props?: Partial<WidgetDisplayProps> | null): WidgetDisplayProps {
   return {
     ...widgetPlaceholderProps,
@@ -30,7 +34,7 @@ export function getWidgetPrimaryUnitLabel(props: Partial<WidgetDisplayProps>) {
   if (props.state === 'due') return 'bus due';
   if (props.state === 'empty') return 'setup';
   if (props.primaryValue?.toLowerCase() === 'now') return 'leave now';
-  return props.primaryValue === '1' ? 'minute' : 'minutes';
+  return Number(props.primaryValue) === 1 ? 'minute' : 'minutes';
 }
 
 export function getWidgetNextBusText(props: Partial<WidgetDisplayProps>) {
@@ -95,7 +99,7 @@ export function countdownToWidgetProps(state: CountdownState): WidgetDisplayProp
       const busHint =
         state.realtimeOk && b != null && b > 0 ? ` · Bus in ${b} min` : '';
       return {
-        primaryValue: String(m),
+        primaryValue: formatWidgetPrimaryValue(m),
         unitLabel: (m === 1 ? 'Minute to leave' : 'Minutes to leave') + busHint,
         routeBadge: badge,
         headsign: head,

@@ -48,6 +48,7 @@ function draftToSaved(d: OnboardingDraft): SavedCommute | null {
 }
 
 const emptyPreview: WidgetDisplayProps = widgetPlaceholderProps;
+const finalPreviewDelayMs = 500;
 
 export default function SummaryScreen() {
   const router = useRouter();
@@ -103,7 +104,14 @@ export default function SummaryScreen() {
     Alert.alert(
       'Add the widget',
       'On your Home Screen, touch and hold an empty area, tap + in the corner, then search for Stumbl.',
-      [{ text: 'OK', onPress: () => router.replace('/(main)') }]
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            setTimeout(() => router.replace('/(main)'), finalPreviewDelayMs);
+          },
+        },
+      ]
     );
   };
 

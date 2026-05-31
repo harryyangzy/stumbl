@@ -9,6 +9,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
+import { BackIcon } from '@/components/icons/BackIcon';
 import { theme } from '@/lib/theme';
 
 type Props = PressableProps & {
@@ -31,6 +32,17 @@ export function PrimaryButton({
   const isCtaGreen = variant === 'ctaGreen';
   const isCtaOutline = variant === 'ctaOutline';
   const isPrimary = variant === 'primary';
+  const showNextIcon = title === 'Next';
+  const nextIconColor =
+    isCtaGreen || isPrimary ? theme.offWhite : isYellow || isCtaOutline ? theme.black : theme.brandGreen;
+  const renderTitle = (textStyle: object) => (
+    <View style={styles.labelRow}>
+      <Text style={[styles.label, textStyle]}>{title}</Text>
+      {showNextIcon ? (
+        <BackIcon color={nextIconColor} style={styles.nextIcon} />
+      ) : null}
+    </View>
+  );
 
   if (isYellow) {
     return (
@@ -47,7 +59,7 @@ export function PrimaryButton({
           {loading ? (
             <ActivityIndicator color={theme.black} />
           ) : (
-            <Text style={[styles.label, inactive ? styles.labelBlack : styles.labelYellow]}>{title}</Text>
+            renderTitle(inactive ? styles.labelBlack : styles.labelYellow)
           )}
         </View>
       </Pressable>
@@ -69,7 +81,7 @@ export function PrimaryButton({
           {loading ? (
             <ActivityIndicator color={theme.black} />
           ) : (
-            <Text style={[styles.label, inactive ? styles.labelBlack : styles.labelPrimary]}>{title}</Text>
+            renderTitle(inactive ? styles.labelBlack : styles.labelPrimary)
           )}
         </View>
       </Pressable>
@@ -91,7 +103,7 @@ export function PrimaryButton({
           {loading ? (
             <ActivityIndicator color={theme.black} />
           ) : (
-            <Text style={[styles.label, styles.labelBlack]}>{title}</Text>
+            renderTitle(styles.labelBlack)
           )}
         </View>
       </Pressable>
@@ -115,14 +127,10 @@ export function PrimaryButton({
       {loading ? (
         <ActivityIndicator color={inactive ? theme.black : isPrimary ? theme.offWhite : theme.brandGreen} />
       ) : (
-        <Text
-          style={[
-            styles.label,
-            isPrimary && (inactive ? styles.labelBlack : styles.labelPrimary),
-            variant === 'secondary' && (inactive ? styles.labelBlack : styles.labelSecondary),
-          ]}>
-          {title}
-        </Text>
+        renderTitle([
+          isPrimary && (inactive ? styles.labelBlack : styles.labelPrimary),
+          variant === 'secondary' && (inactive ? styles.labelBlack : styles.labelSecondary),
+        ])
       )}
     </Pressable>
   );
@@ -206,6 +214,14 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: theme.fonts.heading,
     fontSize: theme.button,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  nextIcon: {
+    transform: [{ rotate: '180deg' }],
   },
   labelPrimary: {
     color: theme.offWhite,
