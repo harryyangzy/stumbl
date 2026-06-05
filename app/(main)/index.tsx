@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BackIcon } from '@/components/icons/BackIcon';
+import { BackLink } from '@/components/ui/BackLink';
 import { WidgetPreviewCard } from '@/components/ui/WidgetPreviewCard';
 import { theme } from '@/lib/theme';
 import { buildGoogleMapsCoordinateUrl } from '@/services/maps/googleMaps';
@@ -97,14 +97,9 @@ export default function MainScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Pressable
-            accessibilityRole="button"
-            hitSlop={14}
-            style={styles.backHit}
-            onPress={() => router.back()}>
-            <BackIcon />
-            <Text style={styles.back}>Back</Text>
-          </Pressable>
+          <View style={styles.backSlot}>
+            <BackLink onPress={() => router.back()} />
+          </View>
           <Text style={styles.headerTitle}>Widget Preview</Text>
         </View>
 
@@ -160,17 +155,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backHit: {
+  backSlot: {
     position: 'absolute',
     left: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  back: {
-    fontFamily: theme.fonts.heading,
-    fontSize: 16,
-    color: theme.brandGreen,
   },
   headerTitle: {
     fontFamily: theme.fonts.heading,

@@ -131,7 +131,7 @@ export default function StopScreen() {
       <View style={styles.screenBody}>
         <View style={styles.main}>
           <View style={styles.backSlot}>
-            <BackLink label="< Home" onPress={() => router.replace('/(onboarding)/welcome')} />
+            <BackLink label="Home" onPress={() => router.replace('/(onboarding)/welcome')} />
           </View>
 
           <ScrollView
