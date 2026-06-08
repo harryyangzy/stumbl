@@ -57,5 +57,6 @@ const styles = StyleSheet.create({
     color: theme.brandGreen,
     includeFontPadding: false,
     flexShrink: 0,
+    transform: [{ translateY: 1 }],
   },
 });

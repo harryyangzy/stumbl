@@ -205,8 +205,8 @@ const styles = StyleSheet.create({
   main: { flex: 1, minHeight: 0, flexDirection: 'column' },
   backSlot: {
     position: 'absolute',
-    top: theme.spaceSm,
-    left: theme.screenEdge,
+    top: 40,
+    left: 40,
     zIndex: 10,
   },
   scrollArea: { flex: 1, minHeight: 0 },

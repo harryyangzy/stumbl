@@ -154,8 +154,8 @@ const styles = StyleSheet.create({
   main: { flex: 1, minHeight: 0 },
   backSlot: {
     position: 'absolute',
-    top: 20,
-    left: 26,
+    top: 40,
+    left: 40,
     zIndex: 10,
   },
   content: {
