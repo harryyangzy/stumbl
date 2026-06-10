@@ -17,6 +17,7 @@ import { OnboardingProgressBar } from '@/components/ui/OnboardingProgressBar';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { SearchField } from '@/components/ui/SearchField';
 import { theme } from '@/lib/theme';
+import { searchAddresses, type AddressResult } from '@/services/geocoding/geocodingService';
 import { getStaticGtfsService } from '@/services/gtfs/staticGtfsService';
 import type { GtfsStop } from '@/types/gtfs';
 import { useCommuteStore } from '@/store/commuteStore';
@@ -34,6 +35,11 @@ const SUB_TO_SEARCH_GAP = theme.headingToControl - 2;
 /** Title → subtitle: 2px tighter than headingLineGap. */
 const TITLE_TO_SUB_GAP = theme.headingLineGap - 2;
 
+/** Don't geocode tiny fragments — addresses are longer, and it keeps Nominatim traffic down. */
+const MIN_ADDRESS_QUERY_LEN = 4;
+/** Address lookup debounced much slower than stop search (network + geocoder rate limits). */
+const ADDRESS_DEBOUNCE_MS = 600;
+
 export default function StopScreen() {
   const router = useRouter();
   /** Opened from the widget preview's edit sheet — confirm goes back instead of forward. */
@@ -49,7 +55,13 @@ export default function StopScreen() {
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
   const [results, setResults] = useState<GtfsStop[]>([]);
+  const [addressResults, setAddressResults] = useState<AddressResult[]>([]);
+  /** Set after tapping an address suggestion — replaces the list with stops near that address. */
+  const [addressStops, setAddressStops] = useState<{ label: string; stops: GtfsStop[] } | null>(
+    null
+  );
   const searchSeq = useRef(0);
+  const addressSeq = useRef(0);
 
   /** Keep query in sync when draft stop changes — never refill when user clears the field. */
   const lastDraftStopId = useRef<string | undefined>(undefined);
@@ -98,10 +110,33 @@ export default function StopScreen() {
     return () => clearTimeout(t);
   }, [q, runSearch]);
 
+  /** Address geocoding runs on its own, slower debounce alongside stop search. */
+  const runAddressSearch = useCallback(async (query: string) => {
+    const seq = ++addressSeq.current;
+    const trimmed = query.trim();
+    if (trimmed.length < MIN_ADDRESS_QUERY_LEN) {
+      if (seq === addressSeq.current) setAddressResults([]);
+      return;
+    }
+    try {
+      const svc = await getStaticGtfsService();
+      const found = await searchAddresses(trimmed, svc.bounds(), 2);
+      if (seq === addressSeq.current) setAddressResults(found);
+    } catch {
+      if (seq === addressSeq.current) setAddressResults([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      void runAddressSearch(q);
+    }, ADDRESS_DEBOUNCE_MS);
+    return () => clearTimeout(t);
+  }, [q, runAddressSearch]);
+
   const selectedId = draft.stopId;
   /** After a pick, list was hidden; show again when the user edits the search (new hunt). */
-  const showSuggestions =
-    !selectedId || q.trim() !== (draft.stopName ?? '').trim();
+  const showSuggestions = !selectedId || q.trim() !== (draft.stopName ?? '').trim();
 
   const hasTypedQuery = q.trim().length > 0;
   /**
@@ -111,17 +146,37 @@ export default function StopScreen() {
    */
   const showResultsCard = showSuggestions && (loading || hasTypedQuery);
 
+  const listedCount = addressStops
+    ? addressStops.stops.length
+    : results.length + addressResults.length;
   const hasResultsList =
-    showResultsCard && !loading && showSuggestions && hasTypedQuery && results.length > 0;
+    showResultsCard && !loading && showSuggestions && hasTypedQuery && listedCount > 0;
+
+  /** Typing again abandons the "stops near address" view and resumes normal search. */
+  const onChangeQuery = (text: string) => {
+    setQ(text);
+    setAddressStops(null);
+  };
 
   const onPick = (s: GtfsStop) => {
     Keyboard.dismiss();
+    setAddressStops(null);
     setDraft({
       stopId: s.stopId,
       stopName: s.stopName,
       stopLat: s.stopLat,
       stopLon: s.stopLon,
     });
+  };
+
+  const onPickAddress = async (a: AddressResult) => {
+    Keyboard.dismiss();
+    try {
+      const svc = await getStaticGtfsService();
+      setAddressStops({ label: a.label, stops: svc.nearestStops(a.lat, a.lon, 4) });
+    } catch {
+      /* keep current list if GTFS unexpectedly unavailable */
+    }
   };
 
   const goNext = () => {
@@ -153,7 +208,12 @@ export default function StopScreen() {
             <Text style={styles.sub}>Enter your address or stop name</Text>
 
             <View style={styles.pillLayer}>
-              <SearchField value={q} onChangeText={setQ} placeholder="Search stops" pillOutline />
+              <SearchField
+                value={q}
+                onChangeText={onChangeQuery}
+                placeholder="Search stops"
+                pillOutline
+              />
             </View>
 
             {showResultsCard ? (
@@ -163,27 +223,65 @@ export default function StopScreen() {
                     <ActivityIndicator style={styles.loaderInCard} color={theme.brandGreen} />
                   ) : null}
 
-                  {!loading && showSuggestions && hasTypedQuery && results.length === 0 ? (
+                  {!loading && showSuggestions && hasTypedQuery && listedCount === 0 ? (
                     <View style={styles.emptyInCard} />
                   ) : null}
 
-                  {!loading &&
-                    showSuggestions &&
-                    hasTypedQuery &&
-                    results.map((s, index) => {
-                      const isLast = index === results.length - 1;
-                      return (
-                        <TouchableOpacity
-                          key={s.stopId}
-                          activeOpacity={0.75}
-                          onPress={() => onPick(s)}
-                          style={[styles.row, !isLast && styles.rowDivider]}>
-                          <View style={styles.rowText}>
-                            <Text style={styles.stopName}>{s.stopName}</Text>
-                          </View>
-                        </TouchableOpacity>
-                      );
-                    })}
+                  {!loading && showSuggestions && hasTypedQuery && addressStops ? (
+                    <>
+                      <View style={[styles.row, styles.rowDivider]}>
+                        <Text style={styles.nearbyHeader}>Stops near {addressStops.label}</Text>
+                      </View>
+                      {addressStops.stops.map((s, index) => {
+                        const isLast = index === addressStops.stops.length - 1;
+                        return (
+                          <TouchableOpacity
+                            key={s.stopId}
+                            activeOpacity={0.75}
+                            onPress={() => onPick(s)}
+                            style={[styles.row, !isLast && styles.rowDivider]}>
+                            <View style={styles.rowText}>
+                              <Text style={styles.stopName}>{s.stopName}</Text>
+                            </View>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </>
+                  ) : null}
+
+                  {!loading && showSuggestions && hasTypedQuery && !addressStops ? (
+                    <>
+                      {results.map((s, index) => {
+                        const isLast = index === results.length - 1 && addressResults.length === 0;
+                        return (
+                          <TouchableOpacity
+                            key={s.stopId}
+                            activeOpacity={0.75}
+                            onPress={() => onPick(s)}
+                            style={[styles.row, !isLast && styles.rowDivider]}>
+                            <View style={styles.rowText}>
+                              <Text style={styles.stopName}>{s.stopName}</Text>
+                            </View>
+                          </TouchableOpacity>
+                        );
+                      })}
+                      {addressResults.map((a, index) => {
+                        const isLast = index === addressResults.length - 1;
+                        return (
+                          <TouchableOpacity
+                            key={a.id}
+                            activeOpacity={0.75}
+                            onPress={() => void onPickAddress(a)}
+                            style={[styles.row, !isLast && styles.rowDivider]}>
+                            <View style={styles.rowText}>
+                              <Text style={styles.stopName}>{a.label}</Text>
+                              <Text style={styles.addressTag}>Address · show nearby stops</Text>
+                            </View>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </>
+                  ) : null}
                 </View>
               </View>
             ) : null}
@@ -259,17 +357,13 @@ const styles = StyleSheet.create({
     borderColor: theme.black,
     borderBottomLeftRadius: theme.radiusMd,
     borderBottomRightRadius: theme.radiusMd,
-    ...(Platform.OS === 'ios'
-      ? { borderCurve: 'continuous' as const }
-      : {}),
+    ...(Platform.OS === 'ios' ? { borderCurve: 'continuous' as const } : {}),
   },
   resultsCardClip: {
     overflow: 'hidden',
     borderBottomLeftRadius: theme.radiusMd,
     borderBottomRightRadius: theme.radiusMd,
-    ...(Platform.OS === 'ios'
-      ? { borderCurve: 'continuous' as const }
-      : {}),
+    ...(Platform.OS === 'ios' ? { borderCurve: 'continuous' as const } : {}),
   },
   loaderInCard: {
     paddingVertical: theme.spaceLg,
@@ -293,6 +387,16 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.body,
     fontSize: theme.body,
     color: theme.textPrimary,
+  },
+  addressTag: {
+    fontFamily: theme.fonts.body,
+    fontSize: theme.body - 3,
+    color: theme.grey,
+  },
+  nearbyHeader: {
+    fontFamily: theme.fonts.body,
+    fontSize: theme.body - 2,
+    color: theme.grey,
   },
   footerGap: {
     height: theme.scrollContentAboveFooter,

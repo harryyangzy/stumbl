@@ -130,13 +130,15 @@ export default function LineScreen() {
               </View>
             )}
           </ScrollView>
-          {selectedIds.length > 0 ? <View style={styles.footerGap} /> : null}
+          <View style={styles.footerGap} />
         </View>
-        {selectedIds.length > 0 ? (
-          <View style={styles.footer}>
+        <View style={styles.footer} pointerEvents="box-none">
+          {selectedIds.length > 0 ? (
             <PrimaryButton title={isEdit ? 'Done' : 'Next'} variant="ctaGreen" onPress={onNext} />
-          </View>
-        ) : null}
+          ) : (
+            <View style={styles.footerPlaceholder} />
+          )}
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -147,13 +149,14 @@ const styles = StyleSheet.create({
   screenBody: { flex: 1, flexDirection: 'column' },
   main: { flex: 1, minHeight: 0, flexDirection: 'column' },
   scrollArea: { flex: 1, minHeight: 0 },
+  /** Same vertical rhythm as walking/buffer: centered in the scroll area above footerGap. */
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: theme.screenEdge,
     paddingTop: 44,
     paddingBottom: 0,
-    alignSelf: 'stretch',
+    width: '100%',
   },
   title: {
     ...theme.textHeading,
@@ -182,6 +185,10 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     paddingHorizontal: theme.screenEdge,
     alignItems: 'center',
+  },
+  /** Keeps footer height stable when Next is hidden so the question block stays aligned. */
+  footerPlaceholder: {
+    minHeight: 40,
   },
   missWrap: {
     flex: 1,

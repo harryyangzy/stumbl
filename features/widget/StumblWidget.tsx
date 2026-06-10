@@ -10,23 +10,53 @@ import {
 } from '@expo/ui/swift-ui/modifiers';
 import { createWidget, type WidgetEnvironment } from 'expo-widgets';
 
-import {
-  getWidgetNextBusText,
-  getWidgetPrimaryUnitLabel,
-  normalizeWidgetProps,
-  type WidgetDisplayProps,
-} from '@/services/widget/widgetViewModel';
+import type { WidgetDisplayProps } from '@/services/widget/widgetViewModel';
 
 function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnvironment) {
   'widget';
 
-  const props = normalizeWidgetProps(rawProps);
+  /**
+   * The 'widget' directive serializes only this function's source into the
+   * widget extension's bare JS context — imports from other modules don't
+   * exist there, so every helper must live inside this function body.
+   * Keep in sync with `services/widget/widgetViewModel.ts`.
+   */
+  const props: WidgetDisplayProps = {
+    primaryValue: '90',
+    unitLabel: 'seconds',
+    routeBadge: '102',
+    headsign: '',
+    state: 'leave_in',
+    mapsUrl: '',
+    ...rawProps,
+  };
+
+  function getPrimaryUnitLabel(p: WidgetDisplayProps) {
+    if (p.state === 'due') return 'bus due';
+    if (p.state === 'empty') return 'setup';
+    if (p.primaryValue.toLowerCase() === 'now') return 'leave now';
+    return Number(p.primaryValue) === 1 ? 'minute' : 'minutes';
+  }
+
+  function getNextBusText(p: WidgetDisplayProps) {
+    if (!p.routeBadge) return p.unitLabel || p.headsign;
+
+    const busMinutes = p.unitLabel.match(/bus in (\d+) min/i)?.[1];
+    if (busMinutes) {
+      return `${p.routeBadge} in ${busMinutes} ${busMinutes === '1' ? 'minute' : 'minutes'}`;
+    }
+
+    if (p.state === 'due') return `${p.routeBadge} due now`;
+    if (p.state === 'fallback') return 'Realtime unavailable';
+    return p.headsign || p.unitLabel;
+  }
+
   const gold = '#F8BB36';
   const green = '#148240';
   const cream = '#FBF2E5';
   const ink = '#000000';
-  const primaryUnitLabel = getWidgetPrimaryUnitLabel(props);
-  const nextBusText = getWidgetNextBusText(props);
+  const primaryUnitLabel = getPrimaryUnitLabel(props);
+  const nextBusText = getNextBusText(props);
 
   return (
     <ZStack

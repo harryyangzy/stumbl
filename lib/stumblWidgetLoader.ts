@@ -4,9 +4,10 @@ import type { WidgetDisplayProps } from '@/services/widget/widgetViewModel';
 
 import { isExpoGo } from '@/lib/isExpoGo';
 
-/** Matches `createWidget` return (updateSnapshot only used here). */
+/** Matches the `createWidget` return (subset of `Widget` methods used by the app). */
 export type StumblWidgetHandle = {
   updateSnapshot: (props: WidgetDisplayProps) => void;
+  updateTimeline: (entries: { date: Date; props: WidgetDisplayProps }[]) => void;
 };
 
 let loadPromise: Promise<StumblWidgetHandle | null> | null = null;

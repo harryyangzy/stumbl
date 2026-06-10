@@ -209,6 +209,42 @@ export class StaticGtfsService {
     return scored.slice(0, limit).map((x) => x.stop);
   }
 
+  /** Bounding box of all stops, slightly padded — used to constrain address geocoding. */
+  bounds(): { minLat: number; maxLat: number; minLon: number; maxLon: number } {
+    let minLat = Infinity;
+    let maxLat = -Infinity;
+    let minLon = Infinity;
+    let maxLon = -Infinity;
+    for (const s of this.stops) {
+      if (!Number.isFinite(s.stopLat) || !Number.isFinite(s.stopLon)) continue;
+      if (s.stopLat < minLat) minLat = s.stopLat;
+      if (s.stopLat > maxLat) maxLat = s.stopLat;
+      if (s.stopLon < minLon) minLon = s.stopLon;
+      if (s.stopLon > maxLon) maxLon = s.stopLon;
+    }
+    const pad = 0.02; // ~2 km so addresses just outside the outermost stop still resolve
+    return {
+      minLat: minLat - pad,
+      maxLat: maxLat + pad,
+      minLon: minLon - pad,
+      maxLon: maxLon + pad,
+    };
+  }
+
+  /** Stops closest to a point, nearest first (equirectangular approx — fine at city scale). */
+  nearestStops(lat: number, lon: number, limit = 4): GtfsStop[] {
+    const cosLat = Math.cos((lat * Math.PI) / 180);
+    const scored: { stop: GtfsStop; d2: number }[] = [];
+    for (const s of this.stops) {
+      if (!Number.isFinite(s.stopLat) || !Number.isFinite(s.stopLon)) continue;
+      const dLat = s.stopLat - lat;
+      const dLon = (s.stopLon - lon) * cosLat;
+      scored.push({ stop: s, d2: dLat * dLat + dLon * dLon });
+    }
+    scored.sort((a, b) => a.d2 - b.d2);
+    return scored.slice(0, limit).map((x) => x.stop);
+  }
+
   routesServingStop(stopId: string): { route: GtfsRoute; headsign: string }[] {
     const times = this.stopTimesAtStop.get(stopId) ?? [];
     const seen = new Map<string, { route: GtfsRoute; headsign: string }>();

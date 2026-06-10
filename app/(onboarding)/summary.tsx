@@ -1,13 +1,13 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EditWidgetSheet, type EditSheetLine } from '@/components/ui/EditWidgetSheet';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { WidgetPreviewCard } from '@/components/ui/WidgetPreviewCard';
 import { formatLineDestinationLabel } from '@/lib/routeLineLabel';
-import { loadStumblWidget } from '@/lib/stumblWidgetLoader';
+import { refreshWidgetTimeline } from '@/services/widget/widgetTimelineService';
 import { buildGoogleMapsCoordinateUrl } from '@/services/maps/googleMaps';
 import { computeCountdownState } from '@/services/countdown/countdownService';
 import { getStaticGtfsService } from '@/services/gtfs/staticGtfsService';
@@ -56,6 +56,7 @@ export default function SummaryScreen() {
   const savedCommute = useCommuteStore((s) => s.savedCommute);
   const saveCommute = useCommuteStore((s) => s.saveCommute);
   const beginEditSetup = useCommuteStore((s) => s.beginEditSetup);
+  const clearSaved = useCommuteStore((s) => s.clearSaved);
 
   const [preview, setPreview] = useState<WidgetDisplayProps>(emptyPreview);
   const [editOpen, setEditOpen] = useState(false);
@@ -137,12 +138,38 @@ export default function SummaryScreen() {
     if (!saved) return;
     saveCommute(saved);
 
-    const widget = await loadStumblWidget();
-    widget?.updateSnapshot(preview);
+    await refreshWidgetTimeline(saved);
 
     Alert.alert(
       'Add the widget',
       'On your Home Screen, touch and hold an empty area, tap + in the corner, then search for Stumbl.'
+    );
+  };
+
+  const onReset = () => {
+    Alert.alert('Reset widget?', 'This clears your saved setup and starts over.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Reset',
+        style: 'destructive',
+        onPress: () => {
+          clearSaved();
+          router.replace('/(onboarding)/welcome');
+        },
+      },
+    ]);
+  };
+
+  const onOpenMenu = () => {
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        options: ['Cancel', 'Reset Widget'],
+        cancelButtonIndex: 0,
+        destructiveButtonIndex: 1,
+      },
+      (buttonIndex) => {
+        if (buttonIndex === 1) onReset();
+      }
     );
   };
 
@@ -173,7 +200,19 @@ export default function SummaryScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.main}>
-        <Text style={styles.pageTitle}>Widget Preview</Text>
+        <View style={styles.header}>
+          <Text style={styles.pageTitle}>Widget Preview</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="More options"
+            hitSlop={14}
+            onPress={onOpenMenu}
+            style={styles.dotsHit}>
+            <View style={styles.dot} />
+            <View style={styles.dot} />
+            <View style={styles.dot} />
+          </Pressable>
+        </View>
         <View style={styles.content}>
           <WidgetPreviewCard model={preview} />
           <View style={styles.stopBlock}>
@@ -187,6 +226,7 @@ export default function SummaryScreen() {
             <Text style={styles.editLink}>Edit Widget</Text>
           </Pressable>
         </View>
+
       </View>
 
       <EditWidgetSheet
@@ -208,13 +248,29 @@ export default function SummaryScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.screenBg },
   main: { flex: 1, minHeight: 0 },
-  pageTitle: {
+  header: {
     marginTop: 12,
+    justifyContent: 'center',
+  },
+  pageTitle: {
     fontFamily: theme.fonts.heading,
     fontSize: 18,
     lineHeight: 18,
     color: theme.black,
     textAlign: 'center',
+  },
+  dotsHit: {
+    position: 'absolute',
+    right: theme.screenEdge,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  dot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: theme.black,
   },
   content: {
     position: 'absolute',
