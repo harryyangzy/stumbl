@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BackLink } from '@/components/ui/BackLink';
+import { OnboardingProgressBar } from '@/components/ui/OnboardingProgressBar';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { SearchField } from '@/components/ui/SearchField';
 import { theme } from '@/lib/theme';
@@ -26,7 +26,7 @@ import { useCommuteStore } from '@/store/commuteStore';
  * Reduced vs earlier so less white shows above the list behind the pill.
  */
 const RESULTS_CARD_OVERLAP = 16;
-/** Space reserved for the absolute back row so the title block doesn’t sit under it. */
+/** Top spacing below the progress bar so the title block keeps its vertical rhythm. */
 const SCROLL_TOP_FOR_BACK = 44;
 
 /** Tighter gap under subtitle (“enter your address…”) per spec (−2px vs headingToControl). */
@@ -36,6 +36,8 @@ const TITLE_TO_SUB_GAP = theme.headingLineGap - 2;
 
 export default function StopScreen() {
   const router = useRouter();
+  /** Opened from the widget preview's edit sheet — confirm goes back instead of forward. */
+  const isEdit = useLocalSearchParams<{ edit?: string }>().edit === '1';
   const { height: windowHeight } = useWindowDimensions();
   const draft = useCommuteStore((s) => s.draft);
   const setDraft = useCommuteStore((s) => s.setDraft);
@@ -123,17 +125,19 @@ export default function StopScreen() {
   };
 
   const goNext = () => {
-    if (selectedId) router.push('/(onboarding)/line');
+    if (!selectedId) return;
+    if (isEdit) {
+      router.back();
+    } else {
+      router.push('/(onboarding)/line');
+    }
   };
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.screenBody}>
+        <OnboardingProgressBar step={1} />
         <View style={styles.main}>
-          <View style={styles.backSlot}>
-            <BackLink label="Home" onPress={() => router.replace('/(onboarding)/welcome')} />
-          </View>
-
           <ScrollView
             style={styles.scrollArea}
             keyboardShouldPersistTaps="always"
@@ -190,7 +194,7 @@ export default function StopScreen() {
           <>
             <View style={styles.footerGap} />
             <View style={styles.footer}>
-              <PrimaryButton title="Next" variant="ctaGreen" onPress={goNext} />
+              <PrimaryButton title={isEdit ? 'Done' : 'Next'} variant="ctaGreen" onPress={goNext} />
             </View>
           </>
         ) : null}
@@ -203,12 +207,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.screenBg },
   screenBody: { flex: 1, flexDirection: 'column' },
   main: { flex: 1, minHeight: 0, flexDirection: 'column' },
-  backSlot: {
-    position: 'absolute',
-    top: 40,
-    left: 40,
-    zIndex: 10,
-  },
   scrollArea: { flex: 1, minHeight: 0 },
   /** flexGrow + flex-start: header stays fixed at top when results appear (no vertical re-centering). */
   scrollContent: {

@@ -19,7 +19,7 @@ export default function Index() {
   }
 
   if (savedCommute && onboardingComplete) {
-    return <Redirect href="/(main)" />;
+    return <Redirect href="/(onboarding)/summary" />;
   }
 
   return <Redirect href="/(onboarding)/welcome" />;

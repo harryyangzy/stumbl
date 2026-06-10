@@ -1,11 +1,12 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BackLink } from '@/components/ui/BackLink';
+import { EditWidgetSheet, type EditSheetLine } from '@/components/ui/EditWidgetSheet';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { WidgetPreviewCard } from '@/components/ui/WidgetPreviewCard';
+import { formatLineDestinationLabel } from '@/lib/routeLineLabel';
 import { loadStumblWidget } from '@/lib/stumblWidgetLoader';
 import { buildGoogleMapsCoordinateUrl } from '@/services/maps/googleMaps';
 import { computeCountdownState } from '@/services/countdown/countdownService';
@@ -48,14 +49,23 @@ function draftToSaved(d: OnboardingDraft): SavedCommute | null {
 }
 
 const emptyPreview: WidgetDisplayProps = widgetPlaceholderProps;
-const finalPreviewDelayMs = 500;
 
 export default function SummaryScreen() {
   const router = useRouter();
   const draft = useCommuteStore((s) => s.draft);
+  const savedCommute = useCommuteStore((s) => s.savedCommute);
   const saveCommute = useCommuteStore((s) => s.saveCommute);
+  const beginEditSetup = useCommuteStore((s) => s.beginEditSetup);
 
   const [preview, setPreview] = useState<WidgetDisplayProps>(emptyPreview);
+  const [editOpen, setEditOpen] = useState(false);
+  const [sheetLines, setSheetLines] = useState<EditSheetLine[]>([]);
+
+  /** Returning users land here with an empty draft — rebuild it from the saved commute. */
+  const draftComplete = draftToSaved(draft) !== null;
+  useEffect(() => {
+    if (!draftComplete && savedCommute) beginEditSetup();
+  }, [draftComplete, savedCommute, beginEditSetup]);
 
   useEffect(() => {
     const c = draftToSaved(draft);
@@ -92,7 +102,36 @@ export default function SummaryScreen() {
     };
   }, [draft]);
 
-  const saved = draftToSaved(draft);
+  /** All selected lines for the edit sheet (falls back to the primary route). */
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      if (!draft.stopId) return;
+      try {
+        const svc = await getStaticGtfsService();
+        const rows = svc.routesServingStop(draft.stopId);
+        const selected = draft.selectedRouteIds ?? (draft.routeId ? [draft.routeId] : []);
+        const items = rows
+          .filter((r) => selected.includes(r.route.routeId))
+          .map((r) => ({
+            routeId: r.route.routeId,
+            shortName: r.route.shortName,
+            label: formatLineDestinationLabel(
+              r.route.shortName,
+              r.headsign || r.route.longName
+            ),
+          }));
+        if (alive) setSheetLines(items);
+      } catch {
+        if (alive) setSheetLines([]);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [draft.stopId, draft.selectedRouteIds, draft.routeId]);
+
+  const saved = draftToSaved(draft) ?? savedCommute;
 
   const onAddToHome = async () => {
     if (!saved) return;
@@ -103,25 +142,25 @@ export default function SummaryScreen() {
 
     Alert.alert(
       'Add the widget',
-      'On your Home Screen, touch and hold an empty area, tap + in the corner, then search for Stumbl.',
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            setTimeout(() => router.replace('/(main)'), finalPreviewDelayMs);
-          },
-        },
-      ]
+      'On your Home Screen, touch and hold an empty area, tap + in the corner, then search for Stumbl.'
     );
+  };
+
+  const goEdit = (
+    pathname:
+      | '/(onboarding)/stop'
+      | '/(onboarding)/line'
+      | '/(onboarding)/walking'
+      | '/(onboarding)/buffer'
+  ) => {
+    setEditOpen(false);
+    router.push({ pathname, params: { edit: '1' } });
   };
 
   if (!saved) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.missOuter}>
-          <View style={styles.backSlot}>
-            <BackLink />
-          </View>
           <View style={styles.missWrap}>
             <Text style={styles.miss}>Finish the earlier steps first.</Text>
             <PrimaryButton title="Back to stops" onPress={() => router.replace('/(onboarding)/stop')} />
@@ -134,17 +173,34 @@ export default function SummaryScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.main}>
-        <View style={styles.backSlot}>
-          <BackLink />
-        </View>
+        <Text style={styles.pageTitle}>Widget Preview</Text>
         <View style={styles.content}>
-          <Text style={styles.title}>See how long until you need to leave at a glance.</Text>
           <WidgetPreviewCard model={preview} />
+          <View style={styles.stopBlock}>
+            <Text style={styles.stopName}>{saved.stopName}</Text>
+            <Text style={styles.stopRole}>Primary Stop</Text>
+          </View>
         </View>
         <View style={styles.actions}>
           <PrimaryButton title="Add to Home" variant="ctaGreen" style={styles.addButton} onPress={onAddToHome} />
+          <Pressable accessibilityRole="button" hitSlop={10} onPress={() => setEditOpen(true)}>
+            <Text style={styles.editLink}>Edit Widget</Text>
+          </Pressable>
         </View>
       </View>
+
+      <EditWidgetSheet
+        visible={editOpen}
+        onClose={() => setEditOpen(false)}
+        lines={sheetLines}
+        walkingMinutes={saved.walkingMinutes}
+        bufferMinutes={saved.bufferMinutes}
+        stopName={saved.stopName}
+        onEditLines={() => goEdit('/(onboarding)/line')}
+        onEditWalking={() => goEdit('/(onboarding)/walking')}
+        onEditBuffer={() => goEdit('/(onboarding)/buffer')}
+        onEditStop={() => goEdit('/(onboarding)/stop')}
+      />
     </SafeAreaView>
   );
 }
@@ -152,39 +208,56 @@ export default function SummaryScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.screenBg },
   main: { flex: 1, minHeight: 0 },
-  backSlot: {
-    position: 'absolute',
-    top: 40,
-    left: 40,
-    zIndex: 10,
+  pageTitle: {
+    marginTop: 12,
+    fontFamily: theme.fonts.heading,
+    fontSize: 18,
+    lineHeight: 18,
+    color: theme.black,
+    textAlign: 'center',
   },
   content: {
     position: 'absolute',
-    top: 180,
+    top: 148,
     left: 0,
     right: 0,
     alignItems: 'center',
-    gap: 25,
+    gap: 20,
   },
-  title: {
+  stopBlock: {
+    alignItems: 'center',
+  },
+  stopName: {
     fontFamily: theme.fonts.heading,
     fontSize: 18,
+    lineHeight: 18,
     color: theme.black,
-    lineHeight: 22,
     textAlign: 'center',
-    width: 213,
+  },
+  stopRole: {
+    fontFamily: theme.fonts.body,
+    fontSize: 16,
+    color: theme.black,
+    textAlign: 'center',
   },
   actions: {
     position: 'absolute',
-    top: 488,
+    top: 446,
     left: 0,
     right: 0,
     alignItems: 'center',
+    gap: 12,
   },
   addButton: {
     width: 240,
     minHeight: 40,
     paddingVertical: 8,
+  },
+  editLink: {
+    fontFamily: theme.fonts.body,
+    fontSize: 16,
+    color: theme.brandGreen,
+    textAlign: 'center',
   },
   missOuter: { flex: 1 },
   missWrap: {

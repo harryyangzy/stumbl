@@ -1,9 +1,9 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BackLink } from '@/components/ui/BackLink';
+import { OnboardingProgressBar } from '@/components/ui/OnboardingProgressBar';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { RouteSelectRow } from '@/components/ui/RouteSelectRow';
 import { formatLineDestinationLabel } from '@/lib/routeLineLabel';
@@ -17,6 +17,8 @@ type LineOption = { routeId: string; shortName: string; label: string };
 
 export default function LineScreen() {
   const router = useRouter();
+  /** Opened from the widget preview's edit sheet — confirm goes back instead of forward. */
+  const isEdit = useLocalSearchParams<{ edit?: string }>().edit === '1';
   const draft = useCommuteStore((s) => s.draft);
   const setDraft = useCommuteStore((s) => s.setDraft);
 
@@ -78,16 +80,18 @@ export default function LineScreen() {
 
   const onNext = () => {
     if (selectedIds.length === 0) return;
-    router.push('/(onboarding)/walking');
+    if (isEdit) {
+      router.back();
+    } else {
+      router.push('/(onboarding)/walking');
+    }
   };
 
   if (!draft.stopId) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.missOuter}>
-          <View style={styles.backSlot}>
-            <BackLink />
-          </View>
+          <OnboardingProgressBar step={2} />
           <View style={styles.missWrap}>
             <Text style={styles.miss}>Select a stop first.</Text>
             <PrimaryButton title="Back" onPress={() => router.back()} />
@@ -100,10 +104,8 @@ export default function LineScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.screenBody}>
+        <OnboardingProgressBar step={2} />
         <View style={styles.main}>
-          <View style={styles.backSlot}>
-            <BackLink />
-          </View>
           <ScrollView
             style={styles.scrollArea}
             contentContainerStyle={styles.scrollContent}
@@ -132,7 +134,7 @@ export default function LineScreen() {
         </View>
         {selectedIds.length > 0 ? (
           <View style={styles.footer}>
-            <PrimaryButton title="Next" variant="ctaGreen" onPress={onNext} />
+            <PrimaryButton title={isEdit ? 'Done' : 'Next'} variant="ctaGreen" onPress={onNext} />
           </View>
         ) : null}
       </View>
@@ -144,12 +146,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.screenBg },
   screenBody: { flex: 1, flexDirection: 'column' },
   main: { flex: 1, minHeight: 0, flexDirection: 'column' },
-  backSlot: {
-    position: 'absolute',
-    top: 40,
-    left: 40,
-    zIndex: 10,
-  },
   scrollArea: { flex: 1, minHeight: 0 },
   scrollContent: {
     flexGrow: 1,

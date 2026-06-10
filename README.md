@@ -65,7 +65,7 @@ npm run ios
 | --- | --- |
 | UI / navigation | `app/` (Expo Router), `components/ui/` |
 | Onboarding flow | `app/(onboarding)/` |
-| Post-setup home | `app/(main)/` |
+| Post-setup home | `app/(onboarding)/summary.tsx` (widget preview + edit slideover) |
 | Domain | `services/countdown/countdownService.ts` |
 | Static GTFS | `services/gtfs/staticGtfsService.ts` + `data/google_transit/*.txt` |
 | Realtime GTFS-RT JSON | `services/realtime/realtimeGtfsService.ts` |

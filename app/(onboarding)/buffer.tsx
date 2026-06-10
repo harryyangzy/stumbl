@@ -1,9 +1,9 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BackLink } from '@/components/ui/BackLink';
+import { OnboardingProgressBar } from '@/components/ui/OnboardingProgressBar';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { TimeRulerPicker } from '@/components/ui/TimeRulerPicker';
 import { theme } from '@/lib/theme';
@@ -21,6 +21,8 @@ function minutesToSteppedSec(minutes: number | undefined, fallbackMin: number, m
 
 export default function BufferScreen() {
   const router = useRouter();
+  /** Opened from the widget preview's edit sheet — confirm goes back instead of forward. */
+  const isEdit = useLocalSearchParams<{ edit?: string }>().edit === '1';
   const draft = useCommuteStore((s) => s.draft);
   const setDraft = useCommuteStore((s) => s.setDraft);
 
@@ -30,16 +32,18 @@ export default function BufferScreen() {
 
   const onNext = () => {
     setDraft({ bufferMinutes: seconds / 60 });
-    router.push('/(onboarding)/summary');
+    if (isEdit) {
+      router.back();
+    } else {
+      router.push('/(onboarding)/summary');
+    }
   };
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.screenBody}>
+        <OnboardingProgressBar step={4} />
         <View style={styles.main}>
-          <View style={styles.backSlot}>
-            <BackLink />
-          </View>
           <ScrollView
             style={styles.scrollArea}
             contentContainerStyle={styles.scrollContent}
@@ -59,7 +63,7 @@ export default function BufferScreen() {
           <View style={styles.footerGap} />
         </View>
         <View style={styles.footer}>
-          <PrimaryButton title="Next" variant="ctaGreen" onPress={onNext} />
+          <PrimaryButton title={isEdit ? 'Done' : 'Next'} variant="ctaGreen" onPress={onNext} />
         </View>
       </View>
     </SafeAreaView>
@@ -70,12 +74,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.screenBg },
   screenBody: { flex: 1, flexDirection: 'column' },
   main: { flex: 1, minHeight: 0, flexDirection: 'column' },
-  backSlot: {
-    position: 'absolute',
-    top: 40,
-    left: 40,
-    zIndex: 10,
-  },
   scrollArea: { flex: 1, minHeight: 0 },
   scrollContent: {
     flexGrow: 1,
