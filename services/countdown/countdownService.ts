@@ -15,6 +15,8 @@ export type CountdownState = {
   leaveMinutes?: number;
   /** Minutes until bus arrives (when known). */
   busMinutes?: number;
+  /** Seconds until bus arrives (when known). */
+  busArrivalSec?: number;
   routeShort: string;
   headsign: string;
   mapsUrl: string;
@@ -96,6 +98,7 @@ export function computeCountdownState(params: {
 
   const { arrivalMs, fromRealtime } = next;
   const leaveAt = arrivalMs - walkMs - bufferMs;
+  const busArrivalSec = Math.max(0, Math.ceil((arrivalMs - nowMs) / 1000));
   const busMinutes = Math.max(0, Math.ceil((arrivalMs - nowMs) / 60_000));
   const leaveMinutes = Math.max(0, Math.ceil((leaveAt - nowMs) / 60_000));
 
@@ -103,6 +106,7 @@ export function computeCountdownState(params: {
     return {
       kind: 'due',
       busMinutes,
+      busArrivalSec,
       routeShort: commute.routeShortName,
       headsign: commute.headsign ?? commute.routeShortName,
       mapsUrl,
@@ -115,6 +119,7 @@ export function computeCountdownState(params: {
       kind: 'leave_now',
       leaveMinutes: 0,
       busMinutes,
+      busArrivalSec,
       routeShort: commute.routeShortName,
       headsign: commute.headsign ?? commute.routeShortName,
       mapsUrl,
@@ -126,6 +131,7 @@ export function computeCountdownState(params: {
     kind: 'leave_in',
     leaveMinutes,
     busMinutes,
+    busArrivalSec,
     routeShort: commute.routeShortName,
     headsign: commute.headsign ?? commute.routeShortName,
     mapsUrl,

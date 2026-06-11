@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { theme } from '@/lib/theme';
 import {
-  getWidgetNextBusText,
+  getWidgetFooterTitle,
   getWidgetPrimaryUnitLabel,
   type WidgetDisplayProps,
 } from '@/services/widget/widgetViewModel';
@@ -13,7 +13,8 @@ type Props = {
 
 export function WidgetPreviewCard({ model }: Props) {
   const unitLabel = getWidgetPrimaryUnitLabel(model);
-  const nextBusText = getWidgetNextBusText(model);
+  const footerTitle = getWidgetFooterTitle(model);
+  const footerTiming = model.footerLabel;
 
   return (
     <View style={styles.card}>
@@ -25,8 +26,8 @@ export function WidgetPreviewCard({ model }: Props) {
         {model.routeBadge ? <Text style={styles.routeBadge}>{model.routeBadge}</Text> : null}
       </View>
       <View style={styles.footer}>
-        <Text style={styles.footerText}>Next Bus</Text>
-        {nextBusText ? <Text style={styles.footerText}>{nextBusText}</Text> : null}
+        {footerTitle ? <Text style={styles.footerText}>{footerTitle}</Text> : null}
+        {footerTiming ? <Text style={styles.footerText}>{footerTiming}</Text> : null}
       </View>
     </View>
   );
@@ -47,7 +48,7 @@ const styles = StyleSheet.create({
   countdown: {
     position: 'absolute',
     left: 15,
-    top: -6,
+    top: 18,
     alignItems: 'center',
   },
   routeBadge: {
@@ -61,24 +62,23 @@ const styles = StyleSheet.create({
     color: theme.offWhite,
   },
   footer: {
-    height: 64,
-    width: 232,
-    marginLeft: -14,
+    height: 52,
+    width: '100%',
     backgroundColor: theme.white,
     borderTopWidth: 1,
     borderColor: theme.black,
-    paddingLeft: 30,
-    paddingTop: 12,
+    paddingLeft: 14,
+    paddingTop: 9,
   },
   big: {
-    fontFamily: theme.fonts.display,
+    fontFamily: 'Monotalic-NarrowMedium',
     fontSize: 74,
     lineHeight: 91,
     color: theme.textPrimary,
     fontVariant: ['tabular-nums'],
   },
   unit: {
-    marginTop: -19,
+    marginTop: -8,
     fontFamily: theme.fonts.heading,
     fontSize: 18.5,
     color: theme.black,

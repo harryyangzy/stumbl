@@ -21,6 +21,8 @@ export default function RootLayout() {
 
   const [fontsLoaded, fontError] = useFonts({
     'Monotalic-Medium': require('../assets/fonts/Monotalic-Medium.ttf'),
+    'Monotalic-Narrow': require('../assets/fonts/Monotalic-Narrow.ttf'),
+    'Monotalic-NarrowMedium': require('../assets/fonts/Monotalic-NarrowMedium.ttf'),
     'Parabolica-Regular': require('../assets/fonts/fonnts.com-Parabolica_Regular.otf'),
     'Parabolica-Medium': require('../assets/fonts/fonnts.com-Parabolica_Medium.otf'),
   });

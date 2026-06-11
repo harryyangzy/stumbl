@@ -1,4 +1,4 @@
-import { Rectangle, Text, VStack, ZStack } from '@expo/ui/swift-ui';
+import { Rectangle, Spacer, Text, VStack, ZStack } from '@expo/ui/swift-ui';
 import {
   background,
   cornerRadius,
@@ -22,10 +22,11 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
    * Keep in sync with `services/widget/widgetViewModel.ts`.
    */
   const props: WidgetDisplayProps = {
-    primaryValue: '90',
-    unitLabel: 'seconds',
-    routeBadge: '102',
+    primaryValue: '03',
+    unitLabel: 'minutes',
+    routeBadge: '2B',
     headsign: '',
+    footerLabel: 'in 2 minutes',
     state: 'leave_in',
     mapsUrl: '',
     ...rawProps,
@@ -38,17 +39,17 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
     return Number(p.primaryValue) === 1 ? 'minute' : 'minutes';
   }
 
-  function getNextBusText(p: WidgetDisplayProps) {
-    if (!p.routeBadge) return p.unitLabel || p.headsign;
-
-    const busMinutes = p.unitLabel.match(/bus in (\d+) min/i)?.[1];
-    if (busMinutes) {
-      return `${p.routeBadge} in ${busMinutes} ${busMinutes === '1' ? 'minute' : 'minutes'}`;
-    }
-
-    if (p.state === 'due') return `${p.routeBadge} due now`;
+  function getFooterTiming(p: WidgetDisplayProps) {
+    if (p.footerLabel) return p.footerLabel;
     if (p.state === 'fallback') return 'Realtime unavailable';
-    return p.headsign || p.unitLabel;
+    if (p.state === 'empty') return '';
+    if (p.state === 'due') return 'due now';
+    return '';
+  }
+
+  function getFooterTitle(p: WidgetDisplayProps, timing: string) {
+    if (!timing || p.state === 'fallback' || p.state === 'empty') return '';
+    return 'Next bus';
   }
 
   const gold = '#F8BB36';
@@ -56,7 +57,23 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
   const cream = '#FBF2E5';
   const ink = '#000000';
   const primaryUnitLabel = getPrimaryUnitLabel(props);
-  const nextBusText = getNextBusText(props);
+  const footerTiming = getFooterTiming(props);
+  const footerTitle = getFooterTitle(props, footerTiming);
+
+  /**
+   * Figma frame (node 565:28) is a 169×169 canvas but systemSmall widgets
+   * render smaller (148×148 on iPhone SE), so all Figma dimensions are scaled
+   * by 148/169 ≈ 0.876. Top-left content keeps its scaled Figma offsets; the
+   * badge is pinned to the top-trailing corner and the white "Next Bus" band
+   * to the bottom edge so nothing clips across widget sizes.
+   *
+   * IMPORTANT: the widget renderer (WidgetsDynamicView → UIBaseView) applies a
+   * Text node's modifier array twice, so Text may only carry idempotent
+   * modifiers (font / foregroundStyle). All layout modifiers (offset, padding,
+   * background, frame) must live on wrapper stacks, which apply them once.
+   */
+  /** Words like "Now" are wider than 2 digits — shrink so they clear the badge. */
+  const numberSize = props.primaryValue.length > 2 ? 48 : 65;
 
   return (
     <ZStack
@@ -66,61 +83,69 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
         cornerRadius(20),
         frame({ maxWidth: Infinity, maxHeight: Infinity, alignment: 'topLeading' }),
       ]}>
-      <VStack
-        alignment="leading"
-        spacing={-18}
-        modifiers={[offset({ x: 15, y: -6 })]}>
-        <Text modifiers={[font({ family: 'Monotalic-Medium', size: 74 }), foregroundStyle(ink)]}>
+      {/* Countdown number */}
+      <ZStack modifiers={[offset({ x: 13, y: 18 })]}>
+        <Text
+          modifiers={[
+            font({ family: 'Monotalic-NarrowMedium', size: numberSize }),
+            foregroundStyle(ink),
+          ]}>
           {props.primaryValue}
         </Text>
-        <Text
-          modifiers={[
-            font({ family: 'Parabolica-Medium', size: 18.5 }),
-            foregroundStyle(ink),
-            offset({ y: -2 }),
-          ]}>
+      </ZStack>
+      {/* Unit label — Parabolica Medium, spaced below the number */}
+      <ZStack modifiers={[offset({ x: 14, y: 84 })]}>
+        <Text modifiers={[font({ family: 'Parabolica-Medium', size: 16 }), foregroundStyle(ink)]}>
           {primaryUnitLabel}
         </Text>
-      </VStack>
+      </ZStack>
 
+      {/* Route badge — Figma: 20 from top, 15 from trailing @169 */}
       {props.routeBadge ? (
-        <Text
+        <ZStack
           modifiers={[
-            background(green),
             padding({ horizontal: 4 }),
-            font({ family: 'Parabolica-Regular', size: 16 }),
-            foregroundStyle(cream),
-            offset({ x: 121, y: 20 }),
+            background(green),
+            padding({ top: 18, trailing: 13 }),
+            frame({ maxWidth: Infinity, maxHeight: Infinity, alignment: 'topTrailing' }),
           ]}>
-          {props.routeBadge}
-        </Text>
+          <Text modifiers={[font({ family: 'Parabolica-Regular', size: 14 }), foregroundStyle(cream)]}>
+            {props.routeBadge}
+          </Text>
+        </ZStack>
       ) : null}
 
-      <Rectangle
-        modifiers={[
-          background('#FFFFFF'),
-          frame({ width: 232, height: 64 }),
-          offset({ x: -14, y: 117 }),
-        ]}
-      />
-      <Rectangle
-        modifiers={[background(ink), frame({ width: 232, height: 1 }), offset({ x: -14, y: 117 })]}
-      />
-
+      {/* Bottom band — white fill + text as separate full-width layers */}
       <VStack
-        alignment="leading"
         spacing={0}
-        modifiers={[offset({ x: 16, y: 128 }), frame({ width: 125, alignment: 'topLeading' })]}>
-        <Text modifiers={[font({ family: 'Parabolica-Regular', size: 12 }), foregroundStyle(ink)]}>
-          Next Bus
-        </Text>
-        {nextBusText ? (
-          <Text
-            modifiers={[font({ family: 'Parabolica-Regular', size: 12 }), foregroundStyle(ink)]}>
-            {nextBusText}
-          </Text>
-        ) : null}
+        modifiers={[frame({ maxWidth: Infinity, maxHeight: Infinity, alignment: 'bottomLeading' })]}>
+        <Spacer />
+        <Rectangle modifiers={[foregroundStyle(ink), frame({ maxWidth: Infinity, height: 1 })]} />
+        <Rectangle modifiers={[foregroundStyle('#FFFFFF'), frame({ maxWidth: Infinity, height: 45 })]} />
       </VStack>
+      {footerTiming ? (
+        <VStack
+          spacing={0}
+          modifiers={[
+            frame({ maxWidth: Infinity, maxHeight: Infinity, alignment: 'bottomLeading' }),
+            padding({ leading: 14, bottom: 8 }),
+          ]}>
+          <Spacer />
+          {footerTitle ? (
+            <Text
+              modifiers={[
+                font({ family: 'Parabolica-Regular', size: 10.5 }),
+                foregroundStyle(ink),
+              ]}>
+              {footerTitle}
+            </Text>
+          ) : null}
+          <Text
+            modifiers={[font({ family: 'Parabolica-Regular', size: 10.5 }), foregroundStyle(ink)]}>
+            {footerTiming}
+          </Text>
+        </VStack>
+      ) : null}
     </ZStack>
   );
 }

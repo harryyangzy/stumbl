@@ -11,6 +11,7 @@ const widgetPlugin = [
         displayName: 'Stumbl',
         description: 'Leave for the bus on time',
         supportedFamilies: ['systemSmall'],
+        contentMarginsDisabled: true,
       },
     ],
   },
