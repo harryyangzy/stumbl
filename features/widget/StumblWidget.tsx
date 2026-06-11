@@ -35,7 +35,8 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
   function getPrimaryUnitLabel(p: WidgetDisplayProps) {
     if (p.state === 'due') return 'bus due';
     if (p.state === 'empty') return 'setup';
-    if (p.primaryValue.toLowerCase() === 'now') return 'leave now';
+    if (p.primaryValue === '00' || p.state === 'bus_in') return 'leave now';
+    if (p.unitLabel.toLowerCase().includes('second')) return 'seconds';
     return Number(p.primaryValue) === 1 ? 'minute' : 'minutes';
   }
 
@@ -72,8 +73,12 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
    * modifiers (font / foregroundStyle). All layout modifiers (offset, padding,
    * background, frame) must live on wrapper stacks, which apply them once.
    */
-  /** Words like "Now" are wider than 2 digits — shrink so they clear the badge. */
-  const numberSize = props.primaryValue.length > 2 ? 48 : 65;
+  /** Figma 74pt number on a 169pt canvas → ~65pt on systemSmall (148pt). */
+  const numberSize =
+    props.primaryValue.length > 2 || props.primaryValue === '—' || props.primaryValue === '…'
+      ? 48
+      : 65;
+  const unitSize = 16;
 
   return (
     <ZStack
@@ -83,8 +88,8 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
         cornerRadius(20),
         frame({ maxWidth: Infinity, maxHeight: Infinity, alignment: 'topLeading' }),
       ]}>
-      {/* Countdown number */}
-      <ZStack modifiers={[offset({ x: 13, y: 18 })]}>
+      {/* Countdown block — Figma x15 */}
+      <VStack spacing={0} modifiers={[offset({ x: 15, y: 6 })]}>
         <Text
           modifiers={[
             font({ family: 'Monotalic-NarrowMedium', size: numberSize }),
@@ -92,13 +97,12 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
           ]}>
           {props.primaryValue}
         </Text>
-      </ZStack>
-      {/* Unit label — Parabolica Medium, spaced below the number */}
-      <ZStack modifiers={[offset({ x: 14, y: 84 })]}>
-        <Text modifiers={[font({ family: 'Parabolica-Medium', size: 16 }), foregroundStyle(ink)]}>
-          {primaryUnitLabel}
-        </Text>
-      </ZStack>
+        <ZStack modifiers={[offset({ y: -11 })]}>
+          <Text modifiers={[font({ family: 'Parabolica-Medium', size: unitSize }), foregroundStyle(ink)]}>
+            {primaryUnitLabel}
+          </Text>
+        </ZStack>
+      </VStack>
 
       {/* Route badge — Figma: 20 from top, 15 from trailing @169 */}
       {props.routeBadge ? (
@@ -115,33 +119,30 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
         </ZStack>
       ) : null}
 
-      {/* Bottom band — white fill + text as separate full-width layers */}
+      {/* Bottom band — Figma divider at y117, 52pt white footer */}
       <VStack
         spacing={0}
         modifiers={[frame({ maxWidth: Infinity, maxHeight: Infinity, alignment: 'bottomLeading' })]}>
         <Spacer />
         <Rectangle modifiers={[foregroundStyle(ink), frame({ maxWidth: Infinity, height: 1 })]} />
-        <Rectangle modifiers={[foregroundStyle('#FFFFFF'), frame({ maxWidth: Infinity, height: 45 })]} />
+        <Rectangle modifiers={[foregroundStyle('#FFFFFF'), frame({ maxWidth: Infinity, height: 52 })]} />
       </VStack>
       {footerTiming ? (
         <VStack
+          alignment="leading"
           spacing={0}
           modifiers={[
             frame({ maxWidth: Infinity, maxHeight: Infinity, alignment: 'bottomLeading' }),
-            padding({ leading: 14, bottom: 8 }),
+            padding({ leading: 16, bottom: 11 }),
           ]}>
           <Spacer />
           {footerTitle ? (
             <Text
-              modifiers={[
-                font({ family: 'Parabolica-Regular', size: 10.5 }),
-                foregroundStyle(ink),
-              ]}>
+              modifiers={[font({ family: 'Parabolica-Regular', size: 12 }), foregroundStyle(ink)]}>
               {footerTitle}
             </Text>
           ) : null}
-          <Text
-            modifiers={[font({ family: 'Parabolica-Regular', size: 10.5 }), foregroundStyle(ink)]}>
+          <Text modifiers={[font({ family: 'Parabolica-Regular', size: 12 }), foregroundStyle(ink)]}>
             {footerTiming}
           </Text>
         </VStack>

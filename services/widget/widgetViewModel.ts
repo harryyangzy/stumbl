@@ -36,7 +36,8 @@ export function normalizeWidgetProps(props?: Partial<WidgetDisplayProps> | null)
 export function getWidgetPrimaryUnitLabel(props: Partial<WidgetDisplayProps>) {
   if (props.state === 'due') return 'bus due';
   if (props.state === 'empty') return 'setup';
-  if (props.primaryValue?.toLowerCase() === 'now') return 'leave now';
+  if (props.primaryValue === '00' || props.state === 'bus_in') return 'leave now';
+  if (props.unitLabel?.toLowerCase().includes('second')) return 'seconds';
   return Number(props.primaryValue) === 1 ? 'minute' : 'minutes';
 }
 
@@ -118,8 +119,8 @@ export function countdownToWidgetProps(state: CountdownState): WidgetDisplayProp
     case 'leave_now': {
       const b = state.busMinutes;
       return {
-        primaryValue: 'Now',
-        unitLabel: b != null && b > 0 ? `Leave · bus in ${b} min` : 'Leave now',
+        primaryValue: '00',
+        unitLabel: 'leave now',
         routeBadge: badge,
         headsign: head,
         footerLabel: formatWidgetFooterLabel({

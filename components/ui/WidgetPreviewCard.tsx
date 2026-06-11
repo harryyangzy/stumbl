@@ -11,6 +11,11 @@ type Props = {
   model: WidgetDisplayProps;
 };
 
+/** Figma widget frame (node 565:28): 169×169 with hero 117pt + footer 52pt. */
+const CARD = 169;
+const HERO = 117;
+const FOOTER = CARD - HERO;
+
 export function WidgetPreviewCard({ model }: Props) {
   const unitLabel = getWidgetPrimaryUnitLabel(model);
   const footerTitle = getWidgetFooterTitle(model);
@@ -35,54 +40,54 @@ export function WidgetPreviewCard({ model }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    width: 169,
-    height: 169,
+    width: CARD,
+    height: CARD,
     backgroundColor: theme.yellow,
     borderRadius: theme.radiusMd,
     overflow: 'hidden',
   },
   hero: {
-    height: 117,
+    height: HERO,
     position: 'relative',
   },
   countdown: {
     position: 'absolute',
     left: 15,
-    top: 18,
-    alignItems: 'center',
+    top: 6,
+    alignItems: 'flex-start',
   },
   routeBadge: {
     position: 'absolute',
-    left: 121,
+    right: 15,
     top: 20,
     backgroundColor: theme.brandGreen,
     paddingHorizontal: 4,
     fontFamily: theme.fonts.body,
-    fontSize: 16,
+    fontSize: 14,
     color: theme.offWhite,
   },
   footer: {
-    height: 52,
+    height: FOOTER,
     width: '100%',
     backgroundColor: theme.white,
     borderTopWidth: 1,
     borderColor: theme.black,
-    paddingLeft: 14,
-    paddingTop: 9,
+    paddingLeft: 16,
+    paddingTop: 11,
   },
   big: {
     fontFamily: 'Monotalic-NarrowMedium',
     fontSize: 74,
-    lineHeight: 91,
+    lineHeight: 74,
     color: theme.textPrimary,
     fontVariant: ['tabular-nums'],
   },
   unit: {
-    marginTop: -8,
+    marginTop: -11,
     fontFamily: theme.fonts.heading,
     fontSize: 18.5,
+    lineHeight: 18.5,
     color: theme.black,
-    textAlign: 'center',
   },
   footerText: {
     fontFamily: theme.fonts.body,
