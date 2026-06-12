@@ -8,7 +8,7 @@
     "start:native": "expo start",
     "sync:icons": "bash scripts/sync-ios-icons.sh",
     "ios": "npm run sync:icons && expo run:ios",
-    "prebuild": "expo prebuild --platform ios && npm run sync:icons",
+    "prebuild": "expo prebuild --platform ios --clean && npm run sync:icons",
     "lint": "eslint \"**/*.{js,jsx,ts,tsx}\" && prettier -c \"**/*.{js,jsx,ts,tsx,json}\"",
     "format": "eslint \"**/*.{js,jsx,ts,tsx}\" --fix && prettier \"**/*.{js,jsx,ts,tsx,json}\" --write",
     "android": "expo run:android"

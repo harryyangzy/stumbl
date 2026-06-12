@@ -1,5 +1,5 @@
 /** Swap to false to hit live LTC GTFS-RT endpoints (requires network). */
-export const USE_MOCK_REALTIME = true;
+export const USE_MOCK_REALTIME = false;
 
 export const REALTIME_ENDPOINTS = {
   tripUpdates: 'https://gtfs.ltconline.ca/TripUpdate/TripUpdates.json',
