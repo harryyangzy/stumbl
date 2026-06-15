@@ -100,12 +100,22 @@ export function TimeRulerPicker({
     setCenteredSec(snapFromOffset(x));
   };
 
-  const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const x = e.nativeEvent.contentOffset.x;
-    const next = snapFromOffset(x);
-    onChangeSec(next);
-    setCenteredSec(next);
-    scrollToSec(next, true);
+  const finishScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const x = e.nativeEvent.contentOffset.x;
+      const next = snapFromOffset(x);
+      onChangeSec(next);
+      setCenteredSec(next);
+      scrollToSec(next, true);
+    },
+    [onChangeSec, scrollToSec, snapFromOffset]
+  );
+
+  const onScrollEndDrag = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const vx = e.nativeEvent.velocity?.x ?? 0;
+    if (Math.abs(vx) < 0.05) {
+      finishScroll(e);
+    }
   };
 
   useEffect(() => {
@@ -133,7 +143,7 @@ export function TimeRulerPicker({
             horizontal
             showsHorizontalScrollIndicator={false}
             snapToInterval={ITEM_W}
-            decelerationRate="fast"
+            decelerationRate="normal"
             scrollEventThrottle={16}
             onScroll={onScroll}
             style={styles.scroll}
@@ -141,8 +151,8 @@ export function TimeRulerPicker({
               paddingHorizontal: sidePad,
               alignItems: 'center',
             }}
-            onMomentumScrollEnd={onScrollEnd}
-            onScrollEndDrag={onScrollEnd}>
+            onMomentumScrollEnd={finishScroll}
+            onScrollEndDrag={onScrollEndDrag}>
             {Array.from({ length: count }, (_, i) => {
               const sec = minSec + i * stepSec;
               const d = Math.abs(i - centerIdx);

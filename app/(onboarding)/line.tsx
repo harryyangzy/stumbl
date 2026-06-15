@@ -132,12 +132,14 @@ export default function LineScreen() {
           </ScrollView>
           <View style={styles.footerGap} />
         </View>
-        <View style={styles.footer} pointerEvents="box-none">
-          {selectedIds.length > 0 ? (
-            <PrimaryButton title={isEdit ? 'Done' : 'Next'} variant="ctaGreen" onPress={onNext} />
-          ) : (
-            <View style={styles.footerPlaceholder} />
-          )}
+        <View style={styles.footer} pointerEvents={selectedIds.length > 0 ? 'auto' : 'none'}>
+          <PrimaryButton
+            title={isEdit ? 'Done' : 'Next'}
+            variant="ctaGreen"
+            onPress={onNext}
+            disabled={selectedIds.length === 0}
+            style={selectedIds.length === 0 ? styles.footerButtonHidden : undefined}
+          />
         </View>
       </View>
     </SafeAreaView>
@@ -186,9 +188,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.screenEdge,
     alignItems: 'center',
   },
-  /** Keeps footer height stable when Next is hidden so the question block stays aligned. */
-  footerPlaceholder: {
-    minHeight: 40,
+  /** Reserves footer space while Next is hidden so the list does not jump. */
+  footerButtonHidden: {
+    opacity: 0,
   },
   missWrap: {
     flex: 1,
