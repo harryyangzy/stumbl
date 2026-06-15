@@ -45,6 +45,14 @@ const config: ExpoConfig = {
     bundleIdentifier: 'ca.stumbl.app',
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
+      NSAppTransportSecurity: {
+        NSExceptionDomains: {
+          'gtfs.ltconline.ca': {
+            NSExceptionAllowsInsecureHTTPLoads: true,
+            NSIncludesSubdomains: true,
+          },
+        },
+      },
     },
   },
   android: {

@@ -77,9 +77,9 @@ Swap **static** feeds by replacing files under `data/google_transit/` (keep head
 
 ## Realtime endpoints (LTC)
 
-- Trip updates: `https://gtfs.ltconline.ca/TripUpdate/TripUpdates.json`
-- Alerts: `https://gtfs.ltconline.ca/Alert/Alerts.json`
-- Vehicle positions: `https://gtfs.ltconline.ca/Vehicle/VehiclePositions.json`
+- Trip updates: `http://gtfs.ltconline.ca/TripUpdate/TripUpdates.pb` (GTFS-RT protobuf; JSON/HTTPS endpoints are unreliable)
+- Alerts: `http://gtfs.ltconline.ca/Alert/Alerts.pb`
+- Vehicle positions: `http://gtfs.ltconline.ca/Vehicle/VehiclePositions.pb`
 
 Set `USE_MOCK_REALTIME` to `false` in `lib/config.ts` to use the live trip-updates feed (requires network). If the feed fails or is stale, countdown falls back to **scheduled** times from static GTFS.
 
