@@ -70,7 +70,9 @@ const config: ExpoConfig = {
     'expo-router',
     'expo-font',
     'expo-asset',
-    ...(useNativeWidgets ? ['./plugins/withWidgetFonts', widgetPlugin] : []),
+    ...(useNativeWidgets
+      ? ['./plugins/withDisableUserScriptSandboxing', './plugins/withWidgetFonts', widgetPlugin]
+      : []),
   ] as ExpoConfig['plugins'],
 };
 
