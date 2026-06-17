@@ -26,7 +26,7 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
     unitLabel: 'minutes',
     routeBadge: '2B',
     headsign: '',
-    footerLabel: 'in 2 minutes',
+    footerLabel: 'in 12 minutes',
     state: 'leave_in',
     mapsUrl: '',
     ...rawProps,

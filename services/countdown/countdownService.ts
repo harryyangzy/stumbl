@@ -17,40 +17,64 @@ export type CountdownState = {
   busMinutes?: number;
   /** Seconds until bus arrives (when known). */
   busArrivalSec?: number;
+  /** Seconds until the following bus after the countdown bus (for widget footer). */
+  nextBusArrivalSec?: number;
+  /** True when the footer "next bus" timing comes from GTFS-RT (not static schedule). */
+  nextBusFromRealtime?: boolean;
   routeShort: string;
   headsign: string;
   mapsUrl: string;
   realtimeOk: boolean;
 };
 
-function nextArrivalAfterPredictions(
+/** Treat realtime + scheduled matches within this window as the same departure. */
+const ARRIVAL_DEDUPE_MS = 60_000;
+
+function collectUpcomingArrivals(
   predictions: ArrivalPrediction[],
   scheduled: Date[],
   nowMs: number
-): { arrivalMs: number; fromRealtime: boolean } | null {
-  let bestRt: number | null = null;
+): { arrivalMs: number; fromRealtime: boolean }[] {
+  const candidates: { arrivalMs: number; fromRealtime: boolean }[] = [];
+
   for (const p of predictions) {
     const ms = p.arrivalTimeSec * 1000;
-    if (ms > nowMs && (bestRt === null || ms < bestRt)) {
-      bestRt = ms;
-    }
+    if (ms > nowMs) candidates.push({ arrivalMs: ms, fromRealtime: true });
   }
-  let bestSched: number | null = null;
   for (const d of scheduled) {
     const ms = d.getTime();
-    if (ms > nowMs && (bestSched === null || ms < bestSched)) {
-      bestSched = ms;
+    if (ms > nowMs) candidates.push({ arrivalMs: ms, fromRealtime: false });
+  }
+
+  candidates.sort((a, b) => a.arrivalMs - b.arrivalMs);
+
+  const deduped: { arrivalMs: number; fromRealtime: boolean }[] = [];
+  for (const candidate of candidates) {
+    const previous = deduped[deduped.length - 1];
+    if (!previous || candidate.arrivalMs - previous.arrivalMs > ARRIVAL_DEDUPE_MS) {
+      deduped.push(candidate);
+    } else if (candidate.fromRealtime && !previous.fromRealtime) {
+      deduped[deduped.length - 1] = candidate;
     }
   }
 
-  if (bestRt !== null && bestSched !== null) {
-    return bestRt <= bestSched
-      ? { arrivalMs: bestRt, fromRealtime: true }
-      : { arrivalMs: bestSched, fromRealtime: false };
+  return deduped;
+}
+
+/** Earliest live prediction strictly after the countdown bus (never static schedule). */
+function nextRealtimeArrivalAfter(
+  predictions: ArrivalPrediction[],
+  afterArrivalMs: number,
+  nowMs: number
+): number | null {
+  let best: number | null = null;
+  for (const p of predictions) {
+    const ms = p.arrivalTimeSec * 1000;
+    if (ms <= nowMs) continue;
+    if (ms <= afterArrivalMs + ARRIVAL_DEDUPE_MS) continue;
+    if (best === null || ms < best) best = ms;
   }
-  if (bestRt !== null) return { arrivalMs: bestRt, fromRealtime: true };
-  if (bestSched !== null) return { arrivalMs: bestSched, fromRealtime: false };
-  return null;
+  return best;
 }
 
 export function computeCountdownState(params: {
@@ -84,7 +108,8 @@ export function computeCountdownState(params: {
 
   const preds = feedStale ? [] : predictions;
 
-  const next = nextArrivalAfterPredictions(preds, nextScheduled, nowMs);
+  const arrivals = collectUpcomingArrivals(preds, nextScheduled, nowMs);
+  const next = arrivals[0] ?? null;
 
   if (!next) {
     return {
@@ -101,12 +126,21 @@ export function computeCountdownState(params: {
   const busArrivalSec = Math.max(0, Math.ceil((arrivalMs - nowMs) / 1000));
   const busMinutes = Math.max(0, Math.ceil((arrivalMs - nowMs) / 60_000));
   const leaveMinutes = Math.max(0, Math.ceil((leaveAt - nowMs) / 60_000));
+  const nextBusArrivalMs =
+    preds.length > 0 ? nextRealtimeArrivalAfter(preds, arrivalMs, nowMs) : null;
+  const nextBusArrivalSec =
+    nextBusArrivalMs == null
+      ? undefined
+      : Math.max(0, Math.ceil((nextBusArrivalMs - nowMs) / 1000));
+  const nextBusFromRealtime = nextBusArrivalMs != null;
 
   if (arrivalMs - nowMs <= 90_000) {
     return {
       kind: 'due',
       busMinutes,
       busArrivalSec,
+      nextBusArrivalSec,
+      nextBusFromRealtime,
       routeShort: commute.routeShortName,
       headsign: commute.headsign ?? commute.routeShortName,
       mapsUrl,
@@ -120,6 +154,8 @@ export function computeCountdownState(params: {
       leaveMinutes: 0,
       busMinutes,
       busArrivalSec,
+      nextBusArrivalSec,
+      nextBusFromRealtime,
       routeShort: commute.routeShortName,
       headsign: commute.headsign ?? commute.routeShortName,
       mapsUrl,
@@ -132,6 +168,8 @@ export function computeCountdownState(params: {
     leaveMinutes,
     busMinutes,
     busArrivalSec,
+    nextBusArrivalSec,
+    nextBusFromRealtime,
     routeShort: commute.routeShortName,
     headsign: commute.headsign ?? commute.routeShortName,
     mapsUrl,

@@ -17,7 +17,7 @@ export const widgetPlaceholderProps: WidgetDisplayProps = {
   unitLabel: 'minutes',
   routeBadge: '2B',
   headsign: '',
-  footerLabel: 'in 2 minutes',
+  footerLabel: 'in 12 minutes',
   state: 'leave_in',
   mapsUrl: '',
 };
@@ -57,6 +57,17 @@ export function formatWidgetFooterLabel(params: {
   }
   const mins = Math.ceil(busArrivalSec / 60);
   return `in ${mins} ${mins === 1 ? 'minute' : 'minutes'}`;
+}
+
+export function formatFollowingBusFooterLabel(
+  nextBusArrivalSec?: number,
+  fromRealtime = true
+): string {
+  if (!fromRealtime || nextBusArrivalSec == null) return '';
+  return formatWidgetFooterLabel({
+    busArrivalSec: nextBusArrivalSec,
+    state: 'leave_in',
+  });
 }
 
 export function getWidgetFooterTitle(props: Partial<WidgetDisplayProps>) {
@@ -109,10 +120,10 @@ export function countdownToWidgetProps(state: CountdownState): WidgetDisplayProp
         unitLabel: 'Bus due',
         routeBadge: badge,
         headsign: head,
-        footerLabel: formatWidgetFooterLabel({
-          busArrivalSec: state.busArrivalSec,
-          state: 'due',
-        }),
+        footerLabel: formatFollowingBusFooterLabel(
+          state.nextBusArrivalSec,
+          state.nextBusFromRealtime
+        ),
         state: 'due',
         mapsUrl: state.mapsUrl,
       };
@@ -123,10 +134,10 @@ export function countdownToWidgetProps(state: CountdownState): WidgetDisplayProp
         unitLabel: 'leave now',
         routeBadge: badge,
         headsign: head,
-        footerLabel: formatWidgetFooterLabel({
-          busArrivalSec: state.busArrivalSec,
-          state: 'bus_in',
-        }),
+        footerLabel: formatFollowingBusFooterLabel(
+          state.nextBusArrivalSec,
+          state.nextBusFromRealtime
+        ),
         state: 'bus_in',
         mapsUrl: state.mapsUrl,
       };
@@ -141,10 +152,10 @@ export function countdownToWidgetProps(state: CountdownState): WidgetDisplayProp
         unitLabel: (m === 1 ? 'Minute to leave' : 'Minutes to leave') + busHint,
         routeBadge: badge,
         headsign: head,
-        footerLabel: formatWidgetFooterLabel({
-          busArrivalSec: state.busArrivalSec,
-          state: 'leave_in',
-        }),
+        footerLabel: formatFollowingBusFooterLabel(
+          state.nextBusArrivalSec,
+          state.nextBusFromRealtime
+        ),
         state: 'leave_in',
         mapsUrl: state.mapsUrl,
       };
