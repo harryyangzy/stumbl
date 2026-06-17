@@ -75,9 +75,10 @@ function withWidgetFonts(config) {
     IOSConfig.XcodeUtils.ensureGroupRecursively(project, `${WIDGET_TARGET}/Fonts`);
 
     for (const fontRel of WIDGET_FONTS) {
-      const filepath = path.join(WIDGET_TARGET, 'Fonts', path.basename(fontRel));
+      const basename = path.basename(fontRel);
       IOSConfig.XcodeUtils.addResourceFileToGroup({
-        filepath,
+        // Path is relative to the ExpoWidgetsTarget/Fonts group (not ios/ root).
+        filepath: basename,
         groupName: `${WIDGET_TARGET}/Fonts`,
         project,
         isBuildFile: true,
