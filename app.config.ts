@@ -23,7 +23,7 @@ const useNativeWidgets = process.env.EXPO_NO_WIDGETS !== '1';
 const config: ExpoConfig = {
   name: 'Stumbl',
   slug: 'stumbl',
-  version: '1.0.0',
+  version: '1.0.1',
   extra: {
     /** Set when `EXPO_NO_WIDGETS=1` (Expo Go); `loadStumblWidget` skips `@expo/ui` SwiftUI module. */
     disableNativeWidgets: !useNativeWidgets,
@@ -43,6 +43,7 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'ca.stumbl.app',
+    buildNumber: '2',
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
       NSAppTransportSecurity: {
