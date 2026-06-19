@@ -26,7 +26,7 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
     unitLabel: 'minutes',
     routeBadge: '2B',
     headsign: '',
-    footerLabel: 'in 12 minutes',
+    footerLabel: 'leave in 14 minutes for next 2B',
     state: 'leave_in',
     mapsUrl: '',
     ...rawProps,
@@ -48,9 +48,8 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
     return '';
   }
 
-  function getFooterTitle(p: WidgetDisplayProps, timing: string) {
-    if (!timing || p.state === 'fallback' || p.state === 'empty') return '';
-    return 'Next bus';
+  function getFooterTitle(_p: WidgetDisplayProps, _timing: string) {
+    return '';
   }
 
   const gold = '#F8BB36';

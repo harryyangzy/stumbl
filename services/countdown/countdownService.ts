@@ -19,6 +19,10 @@ export type CountdownState = {
   busArrivalSec?: number;
   /** Seconds until the following bus after the countdown bus (for widget footer). */
   nextBusArrivalSec?: number;
+  /** Minutes until leave for the following bus (same walk + buffer as primary countdown). */
+  nextBusLeaveMinutes?: number;
+  /** True when it's time to leave for the following bus. */
+  nextBusLeaveNow?: boolean;
   /** True when the footer "next bus" timing comes from GTFS-RT (not static schedule). */
   nextBusFromRealtime?: boolean;
   routeShort: string;
@@ -133,6 +137,13 @@ export function computeCountdownState(params: {
       ? undefined
       : Math.max(0, Math.ceil((nextBusArrivalMs - nowMs) / 1000));
   const nextBusFromRealtime = nextBusArrivalMs != null;
+  let nextBusLeaveMinutes: number | undefined;
+  let nextBusLeaveNow = false;
+  if (nextBusArrivalMs != null) {
+    const nextLeaveAt = nextBusArrivalMs - walkMs - bufferMs;
+    nextBusLeaveNow = nowMs >= nextLeaveAt && nowMs < nextBusArrivalMs;
+    nextBusLeaveMinutes = Math.max(0, Math.ceil((nextLeaveAt - nowMs) / 60_000));
+  }
 
   if (arrivalMs - nowMs <= 90_000) {
     return {
@@ -140,6 +151,8 @@ export function computeCountdownState(params: {
       busMinutes,
       busArrivalSec,
       nextBusArrivalSec,
+      nextBusLeaveMinutes,
+      nextBusLeaveNow,
       nextBusFromRealtime,
       routeShort: commute.routeShortName,
       headsign: commute.headsign ?? commute.routeShortName,
@@ -155,6 +168,8 @@ export function computeCountdownState(params: {
       busMinutes,
       busArrivalSec,
       nextBusArrivalSec,
+      nextBusLeaveMinutes,
+      nextBusLeaveNow,
       nextBusFromRealtime,
       routeShort: commute.routeShortName,
       headsign: commute.headsign ?? commute.routeShortName,
@@ -169,6 +184,8 @@ export function computeCountdownState(params: {
     busMinutes,
     busArrivalSec,
     nextBusArrivalSec,
+    nextBusLeaveMinutes,
+    nextBusLeaveNow,
     nextBusFromRealtime,
     routeShort: commute.routeShortName,
     headsign: commute.headsign ?? commute.routeShortName,

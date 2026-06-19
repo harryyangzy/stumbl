@@ -5,7 +5,7 @@ export type WidgetDisplayProps = {
   unitLabel: string;
   routeBadge: string;
   headsign: string;
-  /** Footer second line: bus arrival timing (e.g. "in 2 minutes"). */
+  /** Footer line: leave time for the following bus (e.g. "leave in 14 min for next 2"). */
   footerLabel: string;
   state: 'leave_in' | 'bus_in' | 'due' | 'fallback' | 'empty';
   /** Open in Maps when the widget supports a URL (app + widget bridge). */
@@ -17,7 +17,7 @@ export const widgetPlaceholderProps: WidgetDisplayProps = {
   unitLabel: 'minutes',
   routeBadge: '2B',
   headsign: '',
-  footerLabel: 'in 12 minutes',
+  footerLabel: 'leave in 14 minutes for next 2B',
   state: 'leave_in',
   mapsUrl: '',
 };
@@ -59,20 +59,25 @@ export function formatWidgetFooterLabel(params: {
   return `in ${mins} ${mins === 1 ? 'minute' : 'minutes'}`;
 }
 
-export function formatFollowingBusFooterLabel(
-  nextBusArrivalSec?: number,
-  fromRealtime = true
-): string {
-  if (!fromRealtime || nextBusArrivalSec == null) return '';
-  return formatWidgetFooterLabel({
-    busArrivalSec: nextBusArrivalSec,
-    state: 'leave_in',
-  });
+export function formatFollowingBusFooterLabel(params: {
+  routeShort: string;
+  nextBusLeaveMinutes?: number;
+  nextBusLeaveNow?: boolean;
+  fromRealtime?: boolean;
+}): string {
+  const { routeShort, nextBusLeaveMinutes, nextBusLeaveNow, fromRealtime } = params;
+  if (!fromRealtime) return '';
+  if (nextBusLeaveMinutes == null && !nextBusLeaveNow) return '';
+  const route = routeShort || '—';
+  if (nextBusLeaveNow || nextBusLeaveMinutes === 0) {
+    return `leave now for next ${route}`;
+  }
+  const minutes = nextBusLeaveMinutes ?? 0;
+  return `leave in ${minutes} ${minutes === 1 ? 'minute' : 'minutes'} for next ${route}`;
 }
 
 export function getWidgetFooterTitle(props: Partial<WidgetDisplayProps>) {
-  if (!props.footerLabel || props.state === 'fallback' || props.state === 'empty') return '';
-  return 'Next bus';
+  return '';
 }
 
 export function getWidgetNextBusText(props: Partial<WidgetDisplayProps>) {
@@ -120,10 +125,12 @@ export function countdownToWidgetProps(state: CountdownState): WidgetDisplayProp
         unitLabel: 'Bus due',
         routeBadge: badge,
         headsign: head,
-        footerLabel: formatFollowingBusFooterLabel(
-          state.nextBusArrivalSec,
-          state.nextBusFromRealtime
-        ),
+        footerLabel: formatFollowingBusFooterLabel({
+          routeShort: badge,
+          nextBusLeaveMinutes: state.nextBusLeaveMinutes,
+          nextBusLeaveNow: state.nextBusLeaveNow,
+          fromRealtime: state.nextBusFromRealtime,
+        }),
         state: 'due',
         mapsUrl: state.mapsUrl,
       };
@@ -134,10 +141,12 @@ export function countdownToWidgetProps(state: CountdownState): WidgetDisplayProp
         unitLabel: 'leave now',
         routeBadge: badge,
         headsign: head,
-        footerLabel: formatFollowingBusFooterLabel(
-          state.nextBusArrivalSec,
-          state.nextBusFromRealtime
-        ),
+        footerLabel: formatFollowingBusFooterLabel({
+          routeShort: badge,
+          nextBusLeaveMinutes: state.nextBusLeaveMinutes,
+          nextBusLeaveNow: state.nextBusLeaveNow,
+          fromRealtime: state.nextBusFromRealtime,
+        }),
         state: 'bus_in',
         mapsUrl: state.mapsUrl,
       };
@@ -152,10 +161,12 @@ export function countdownToWidgetProps(state: CountdownState): WidgetDisplayProp
         unitLabel: (m === 1 ? 'Minute to leave' : 'Minutes to leave') + busHint,
         routeBadge: badge,
         headsign: head,
-        footerLabel: formatFollowingBusFooterLabel(
-          state.nextBusArrivalSec,
-          state.nextBusFromRealtime
-        ),
+        footerLabel: formatFollowingBusFooterLabel({
+          routeShort: badge,
+          nextBusLeaveMinutes: state.nextBusLeaveMinutes,
+          nextBusLeaveNow: state.nextBusLeaveNow,
+          fromRealtime: state.nextBusFromRealtime,
+        }),
         state: 'leave_in',
         mapsUrl: state.mapsUrl,
       };
