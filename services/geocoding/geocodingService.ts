@@ -25,7 +25,7 @@ type NominatimRow = {
   lon: string;
 };
 
-/** "350, Cheapside Street, London, Ontario, N6A 3X3, Canada" → "350 Cheapside Street, London". */
+/** "350, King Street, Kitchener, Ontario, N2G 1A1, Canada" → "350 King Street, Kitchener". */
 function shortenDisplayName(displayName: string): string {
   const parts = displayName.split(', ').filter(Boolean);
   if (parts.length === 0) return displayName;

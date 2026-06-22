@@ -1,11 +1,21 @@
-/** Swap to false to hit live LTC GTFS-RT endpoints (requires network). */
+/** Swap to false to hit live GRT GTFS-RT endpoints (requires network). */
 export const USE_MOCK_REALTIME = false;
 
-/** LTC serves GTFS-RT as protobuf over HTTP; HTTPS resets and JSON is ~30MB. */
+/** Grand River Transit (Waterloo Region) GTFS-RT protobuf feeds over HTTPS. */
 export const REALTIME_ENDPOINTS = {
-  tripUpdates: 'http://gtfs.ltconline.ca/TripUpdate/TripUpdates.pb',
-  alerts: 'http://gtfs.ltconline.ca/Alert/Alerts.pb',
-  vehiclePositions: 'http://gtfs.ltconline.ca/Vehicle/VehiclePositions.pb',
+  /** Bus + ION shuttle trip updates (feeds 1 and 2 are merged at fetch time). */
+  tripUpdates: [
+    'https://webapps.regionofwaterloo.ca/api/grt-routes/api/tripupdates/1',
+    'https://webapps.regionofwaterloo.ca/api/grt-routes/api/tripupdates/2',
+  ],
+  alerts: [
+    'https://webapps.regionofwaterloo.ca/api/grt-routes/api/servicealerts/1',
+    'https://webapps.regionofwaterloo.ca/api/grt-routes/api/servicealerts/2',
+  ],
+  vehiclePositions: [
+    'https://webapps.regionofwaterloo.ca/api/grt-routes/api/vehiclepositions/1',
+    'https://webapps.regionofwaterloo.ca/api/grt-routes/api/vehiclepositions/2',
+  ],
 } as const;
 
 export const REALTIME_FETCH_TIMEOUT_MS = 25_000;

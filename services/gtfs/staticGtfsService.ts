@@ -5,6 +5,7 @@ import { parseGtfsTable } from '@/lib/csv';
 import type { GtfsRoute, GtfsStop, GtfsStopTime, GtfsTrip } from '@/types/gtfs';
 
 import routesTxt from '../../data/google_transit/routes.txt';
+import calendarDatesTxt from '../../data/google_transit/calendar_dates.txt';
 import stopTimesTxt from '../../data/google_transit/stop_times.txt';
 import stopsTxt from '../../data/google_transit/stops.txt';
 import tripsTxt from '../../data/google_transit/trips.txt';
@@ -77,8 +78,24 @@ function scoreStopMatchPrecomputed(
   return 0;
 }
 
-/** Service IDs active on a calendar day (weekday / Sat / Sun — extend with calendar_dates later). */
-export function serviceIdsForLocalDate(d: Date): string[] {
+/** YYYYMMDD in local time — matches GTFS calendar_dates.date. */
+export function formatGtfsServiceDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}${m}${day}`;
+}
+
+/**
+ * Service IDs active on a calendar day.
+ * GRT uses calendar_dates-only feeds (exception_type 1 = service runs that day).
+ * Falls back to WEEKDAY/SAT/SUN when no calendar_dates are loaded (legacy LTC-style feeds).
+ */
+export function serviceIdsForLocalDate(d: Date, calendarDatesByYmd?: Map<string, Set<string>>): string[] {
+  if (calendarDatesByYmd) {
+    const ids = calendarDatesByYmd.get(formatGtfsServiceDate(d));
+    return ids ? [...ids] : [];
+  }
   const day = d.getDay();
   if (day === 0) return ['SUN'];
   if (day === 6) return ['SAT'];
@@ -112,13 +129,16 @@ export class StaticGtfsService {
   private tripsByRoute = new Map<string, GtfsTrip[]>();
   private stopTimesByTrip = new Map<string, GtfsStopTime[]>();
   private stopTimesAtStop = new Map<string, GtfsStopTime[]>();
+  /** service_id sets keyed by YYYYMMDD from calendar_dates.txt */
+  private calendarDatesByYmd = new Map<string, Set<string>>();
 
   async load(): Promise<void> {
-    const [stopsRaw, routesRaw, tripsRaw, stopTimesRaw] = await Promise.all([
+    const [stopsRaw, routesRaw, tripsRaw, stopTimesRaw, calendarDatesRaw] = await Promise.all([
       loadBundledText(stopsTxt),
       loadBundledText(routesTxt),
       loadBundledText(tripsTxt),
       loadBundledText(stopTimesTxt),
+      loadBundledText(calendarDatesTxt),
     ]);
 
     this.stops = parseGtfsTable(stopsRaw).map((r) => ({
@@ -173,6 +193,17 @@ export class StaticGtfsService {
 
     for (const [, arr] of this.stopTimesByTrip) {
       arr.sort((a, b) => a.stopSequence - b.stopSequence);
+    }
+
+    this.calendarDatesByYmd = new Map();
+    for (const r of parseGtfsTable(calendarDatesRaw)) {
+      if (r.exception_type !== '1') continue;
+      const date = r.date;
+      const serviceId = r.service_id;
+      if (!date || !serviceId) continue;
+      const set = this.calendarDatesByYmd.get(date) ?? new Set<string>();
+      set.add(serviceId);
+      this.calendarDatesByYmd.set(date, set);
     }
   }
 
@@ -268,7 +299,9 @@ export class StaticGtfsService {
    * Uses service_ids for the calendar day of `after`.
    */
   getScheduledArrivalsAfter(stopId: string, routeId: string, after: Date, count = 4): Date[] {
-    const serviceIds = new Set(serviceIdsForLocalDate(after));
+    const calendar =
+      this.calendarDatesByYmd.size > 0 ? this.calendarDatesByYmd : undefined;
+    const serviceIds = new Set(serviceIdsForLocalDate(after, calendar));
     const tripsForRoute = this.tripsByRoute.get(routeId) ?? [];
     const tripIds = new Set(
       tripsForRoute.filter((t) => serviceIds.has(t.serviceId)).map((t) => t.tripId)
@@ -292,7 +325,7 @@ export class StaticGtfsService {
     nextDayStart.setDate(nextDayStart.getDate() + 1);
 
     if (candidates.length < count) {
-      const nextServiceIds = new Set(serviceIdsForLocalDate(nextDayStart));
+      const nextServiceIds = new Set(serviceIdsForLocalDate(nextDayStart, calendar));
       const nextTripIds = new Set(
         tripsForRoute.filter((t) => nextServiceIds.has(t.serviceId)).map((t) => t.tripId)
       );

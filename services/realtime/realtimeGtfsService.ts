@@ -111,6 +111,40 @@ async function fetchWithTimeout(url: string, ms: number): Promise<Response> {
   }
 }
 
+function mergeRealtimeResults(results: RealtimeFetchResult[]): RealtimeFetchResult {
+  const predictions = results.flatMap((r) => r.predictions);
+  const timestamps = results
+    .map((r) => r.feedTimestampSec)
+    .filter((t): t is number => t !== null);
+  const feedTimestampSec = timestamps.length > 0 ? Math.min(...timestamps) : null;
+  const anyLive = results.some((r) => r.source === 'live');
+  return {
+    predictions,
+    feedTimestampSec,
+    source: anyLive ? 'live' : 'unavailable',
+  };
+}
+
+async function fetchTripUpdatesFromEndpoints(urls: readonly string[]): Promise<RealtimeFetchResult> {
+  const settled = await Promise.all(
+    urls.map(async (url) => {
+      try {
+        const res = await fetchWithTimeout(url, REALTIME_FETCH_TIMEOUT_MS);
+        if (!res.ok) return null;
+        const bytes = await res.arrayBuffer();
+        return parseTripUpdatesProtobuf(bytes);
+      } catch {
+        return null;
+      }
+    })
+  );
+  const ok = settled.filter((r): r is RealtimeFetchResult => r !== null && r.source === 'live');
+  if (ok.length === 0) {
+    return { predictions: [], feedTimestampSec: null, source: 'unavailable' };
+  }
+  return mergeRealtimeResults(ok);
+}
+
 /** Deterministic mock arrivals for development (shifts with `now`). */
 export function mockRealtimeForCommute(commute: SavedCommute, now: Date): RealtimeFetchResult {
   const nowSec = Math.floor(now.getTime() / 1000);
@@ -140,12 +174,7 @@ export class RealtimeGtfsService {
       return mockRealtimeForCommute(commute, now);
     }
     try {
-      const res = await fetchWithTimeout(REALTIME_ENDPOINTS.tripUpdates, REALTIME_FETCH_TIMEOUT_MS);
-      if (!res.ok) {
-        return { predictions: [], feedTimestampSec: null, source: 'unavailable' };
-      }
-      const bytes = await res.arrayBuffer();
-      return parseTripUpdatesProtobuf(bytes);
+      return await fetchTripUpdatesFromEndpoints(REALTIME_ENDPOINTS.tripUpdates);
     } catch {
       return { predictions: [], feedTimestampSec: null, source: 'unavailable' };
     }

@@ -1,6 +1,6 @@
 # Stumbl
 
-iOS-focused Expo app that helps you leave for the bus on time: pick a London Transit Commission (LTC) stop, a route, walking time, and buffer, then track a single commute via a home screen widget.
+iOS-focused Expo app that helps you leave for the bus on time: pick a Grand River Transit (GRT) stop in Waterloo Region, a route, walking time, and buffer, then track a single commute via a home screen widget.
 
 ## Requirements
 
@@ -73,15 +73,20 @@ npm run ios
 | Persistence | `store/commuteStore.ts` (Zustand + AsyncStorage) |
 | iOS widget UI | `features/widget/StumblWidget.tsx` (`expo-widgets` + `@expo/ui` Swift UI) |
 
-Swap **static** feeds by replacing files under `data/google_transit/` (keep headers). Swap **realtime** by changing URLs or implementing a new fetcher behind `RealtimeGtfsService`.
+Swap **static** feeds by replacing files under `data/google_transit/` (keep headers). Swap **realtime** by changing URLs in `lib/config.ts` or implementing a new fetcher behind `RealtimeGtfsService`.
 
-## Realtime endpoints (LTC)
+## Realtime endpoints (GRT)
 
-- Trip updates: `http://gtfs.ltconline.ca/TripUpdate/TripUpdates.pb` (GTFS-RT protobuf; JSON/HTTPS endpoints are unreliable)
-- Alerts: `http://gtfs.ltconline.ca/Alert/Alerts.pb`
-- Vehicle positions: `http://gtfs.ltconline.ca/Vehicle/VehiclePositions.pb`
+Grand River Transit publishes separate bus and ION (LRT) GTFS-RT protobuf feeds over HTTPS. The app merges both trip-update feeds:
 
-Set `USE_MOCK_REALTIME` to `false` in `lib/config.ts` to use the live trip-updates feed (requires network). If the feed fails or is stale, countdown falls back to **scheduled** times from static GTFS.
+- Bus trip updates: `https://webapps.regionofwaterloo.ca/api/grt-routes/api/tripupdates/1`
+- ION trip updates: `https://webapps.regionofwaterloo.ca/api/grt-routes/api/tripupdates/2`
+- Bus alerts: `https://webapps.regionofwaterloo.ca/api/grt-routes/api/servicealerts/1`
+- ION alerts: `https://webapps.regionofwaterloo.ca/api/grt-routes/api/servicealerts/2`
+- Bus vehicle positions: `https://webapps.regionofwaterloo.ca/api/grt-routes/api/vehiclepositions/1`
+- ION vehicle positions: `https://webapps.regionofwaterloo.ca/api/grt-routes/api/vehiclepositions/2`
+
+Set `USE_MOCK_REALTIME` to `false` in `lib/config.ts` to use the live trip-updates feeds (requires network). If the feed fails or is stale, countdown falls back to **scheduled** times from static GTFS.
 
 ## Google Maps
 
@@ -102,9 +107,11 @@ Set `USE_MOCK_REALTIME` to `false` in `lib/config.ts` to use the live trip-updat
 | `nativewind` | Tailwind for global styling hook (screens mostly use `StyleSheet` + tokens) |
 | `react-native-reanimated` / `react-native-worklets` | Required by current Expo / NativeWind toolchain |
 
-## Mock GTFS note
+## Static GTFS note
 
-The committed `data/google_transit/` set is a **small sample** so the app runs immediately. Replace it with the full LTC Google Transit export (same filenames) for production search and schedules.
+The committed `data/google_transit/` set is the **Grand River Transit** export (Kitchener, Waterloo, Cambridge). Refresh it periodically from [GRT open data](https://www.grt.ca/about-grt/open-data/) so schedules and `calendar_dates.txt` stay current. GRT uses `calendar_dates` (not `calendar.txt`) for which trips run on each day.
+
+Extra files in `data/` (`GRT_Stops.csv`, `ION_Stops.csv`, sample `TripUpdates.pb`) are reference downloads and are **not** read by the app — only `data/google_transit/*.txt` is bundled.
 
 ## Widget preview in the app
 

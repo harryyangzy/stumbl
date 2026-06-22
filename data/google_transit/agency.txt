@@ -1,2 +1,2 @@
-agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone,agency_fare_url
-LTC - 2026 February Schedules,London Transit,http://www.londontransit.ca,America/Toronto,en,519-451-1347,http://www.londontransit.ca/fares-and-passes/fares/
+agency_name,agency_url,agency_timezone,agency_lang,agency_phone,agency_fare_url,agency_id
+"Grand River Transit",http://www.grt.ca,America/Toronto,en,519-585-7555,https://www.grt.ca/fares-and-payment/fare-prices/,Grand River Transit
