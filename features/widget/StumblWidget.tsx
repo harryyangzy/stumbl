@@ -34,7 +34,6 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
   };
 
   function getPrimaryUnitLabel(p: WidgetDisplayProps) {
-    if (p.state === 'due') return 'bus due';
     if (p.state === 'empty') return 'setup';
     if (p.primaryValue === '00' || p.state === 'bus_in') return 'leave now';
     if (p.unitLabel.toLowerCase().includes('second')) return 'seconds';
@@ -50,7 +49,6 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
   function getFooterSubtitle(p: WidgetDisplayProps) {
     if (p.state === 'fallback') return 'Realtime unavailable';
     if (p.state === 'empty') return '';
-    if (p.state === 'due') return p.footerLabel || 'due now';
     return p.footerLabel ?? '';
   }
 

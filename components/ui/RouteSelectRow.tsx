@@ -7,7 +7,6 @@ const CHECKBOX_RADIUS = 6;
 const CHECKBOX_STROKE = 1;
 const CHECKBOX_INNER = 12;
 const CHECKBOX_INNER_RADIUS = 4;
-/** Match `lineBoxText` lineHeight so checkbox centers on the line badge row. */
 const LINE_ROW_HEIGHT = 20;
 
 type Props = {
@@ -42,10 +41,8 @@ export function RouteSelectRow({
             {destinationLabel}
           </Text>
         </View>
-        <View style={styles.checkboxAlign}>
-          <View style={[styles.checkboxOuter, selected && styles.checkboxOuterSelected]}>
-            {selected ? <View style={styles.checkboxInner} /> : null}
-          </View>
+        <View style={[styles.checkboxOuter, selected && styles.checkboxOuterSelected]}>
+          {selected ? <View style={styles.checkboxInner} /> : null}
         </View>
       </View>
     </Pressable>
@@ -56,7 +53,7 @@ const styles = StyleSheet.create({
   /** White fill + grey stroke; holds line number, destination, checkbox. */
   pill: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: theme.white,
     borderRadius: theme.radiusPill,
@@ -74,7 +71,7 @@ const styles = StyleSheet.create({
   leftCluster: {
     flex: 1,
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 8,
     minWidth: 0,
     marginRight: theme.spaceSm,
@@ -105,10 +102,6 @@ const styles = StyleSheet.create({
     lineHeight: LINE_ROW_HEIGHT,
     color: theme.textPrimary,
   },
-  /** Keeps checkbox vertically centered on the line badge row when destination wraps. */
-  checkboxAlign: {
-    marginTop: Math.max(0, (LINE_ROW_HEIGHT - CHECKBOX) / 2),
-  },
   checkboxOuter: {
     width: CHECKBOX,
     height: CHECKBOX,
@@ -118,6 +111,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.white,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   checkboxOuterSelected: {
     borderColor: theme.brandGreen,

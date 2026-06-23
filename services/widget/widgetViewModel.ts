@@ -9,7 +9,7 @@ export type WidgetDisplayProps = {
   footerTitle: string;
   /** Footer line 2 — e.g. "for next 301". */
   footerLabel: string;
-  state: 'leave_in' | 'bus_in' | 'due' | 'fallback' | 'empty';
+  state: 'leave_in' | 'bus_in' | 'fallback' | 'empty';
   /** Open in Maps when the widget supports a URL (app + widget bridge). */
   mapsUrl: string;
 };
@@ -37,7 +37,6 @@ export function normalizeWidgetProps(props?: Partial<WidgetDisplayProps> | null)
 }
 
 export function getWidgetPrimaryUnitLabel(props: Partial<WidgetDisplayProps>) {
-  if (props.state === 'due') return 'bus due';
   if (props.state === 'empty') return 'setup';
   if (props.primaryValue === '00' || props.state === 'bus_in') return 'leave now';
   if (props.unitLabel?.toLowerCase().includes('second')) return 'seconds';
@@ -51,9 +50,6 @@ export function formatWidgetFooterLabel(params: {
   const { busArrivalSec, state } = params;
   if (state === 'fallback') return 'Realtime unavailable';
   if (state === 'empty') return '';
-  if (state === 'due' || (busArrivalSec != null && busArrivalSec <= 90)) {
-    return 'due now';
-  }
   if (busArrivalSec == null) return '';
   if (busArrivalSec < 60) {
     return `in ${busArrivalSec} ${busArrivalSec === 1 ? 'second' : 'seconds'}`;
@@ -171,21 +167,21 @@ export function countdownToWidgetProps(state: CountdownState): WidgetDisplayProp
         state: 'fallback',
         mapsUrl: state.mapsUrl,
       };
-    case 'due': {
-      const footer = followingFooter(state, badge);
-      return {
-        primaryValue: '!',
-        unitLabel: 'Bus due',
-        routeBadge: badge,
-        headsign: head,
-        footerTitle: footer.title,
-        footerLabel: footer.subtitle,
-        state: 'due',
-        mapsUrl: state.mapsUrl,
-      };
-    }
     case 'leave_now': {
       const footer = followingFooter(state, badge);
+      const busSec = state.busArrivalSec;
+      if (busSec != null && busSec > 0 && busSec <= 90) {
+        return {
+          primaryValue: String(busSec).padStart(2, '0'),
+          unitLabel: busSec === 1 ? 'Second until bus' : 'Seconds until bus',
+          routeBadge: badge,
+          headsign: head,
+          footerTitle: footer.title,
+          footerLabel: footer.subtitle,
+          state: 'leave_in',
+          mapsUrl: state.mapsUrl,
+        };
+      }
       return {
         primaryValue: '00',
         unitLabel: 'leave now',

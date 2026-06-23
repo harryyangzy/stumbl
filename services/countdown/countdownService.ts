@@ -5,7 +5,6 @@ import type { ArrivalPrediction, RealtimeFetchResult } from '@/types/realtime';
 export type CountdownKind =
   | 'leave_in'
   | 'leave_now'
-  | 'due'
   | 'no_realtime'
   | 'no_setup';
 
@@ -164,19 +163,6 @@ export function computeCountdownState(params: {
     nextBusLeaveNow,
     nextBusFromRealtime,
   };
-
-  if (arrivalMs - nowMs <= 90_000) {
-    return {
-      kind: 'due',
-      busMinutes,
-      busArrivalSec,
-      ...sharedNext,
-      routeShort: commute.routeShortName,
-      headsign: commute.headsign ?? commute.routeShortName,
-      mapsUrl,
-      realtimeOk: fromRealtime,
-    };
-  }
 
   if (nowMs >= leaveAt && nowMs < arrivalMs) {
     return {
