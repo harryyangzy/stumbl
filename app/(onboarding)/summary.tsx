@@ -11,13 +11,15 @@ import { refreshWidgetTimeline } from '@/services/widget/widgetTimelineService';
 import { buildGoogleMapsCoordinateUrl } from '@/services/maps/googleMaps';
 import { computeCountdownState } from '@/services/countdown/countdownService';
 import { getStaticGtfsService } from '@/services/gtfs/staticGtfsService';
-import { realtimeGtfsService } from '@/services/realtime/realtimeGtfsService';
+import { realtimeGtfsService, matchStopIdsForCommute } from '@/services/realtime/realtimeGtfsService';
+import { useTransitAgencyId } from '@/hooks/useTransitAgencyId';
 import {
   countdownToWidgetProps,
   widgetPlaceholderProps,
   type WidgetDisplayProps,
 } from '@/services/widget/widgetViewModel';
 import { theme } from '@/lib/theme';
+import { DEFAULT_TRANSIT_AGENCY } from '@/lib/transitAgencies';
 import type { OnboardingDraft } from '@/store/commuteStore';
 import type { SavedCommute } from '@/types/commute';
 import { useCommuteStore } from '@/store/commuteStore';
@@ -36,6 +38,7 @@ function draftToSaved(d: OnboardingDraft): SavedCommute | null {
     return null;
   }
   return {
+    agencyId: d.agencyId ?? DEFAULT_TRANSIT_AGENCY,
     stopId: d.stopId,
     stopName: d.stopName,
     stopLat: d.stopLat,
@@ -57,6 +60,7 @@ export default function SummaryScreen() {
   const saveCommute = useCommuteStore((s) => s.saveCommute);
   const beginEditSetup = useCommuteStore((s) => s.beginEditSetup);
   const clearSaved = useCommuteStore((s) => s.clearSaved);
+  const agencyId = useTransitAgencyId();
 
   const [preview, setPreview] = useState<WidgetDisplayProps>(emptyPreview);
   const [editOpen, setEditOpen] = useState(false);
@@ -75,9 +79,15 @@ export default function SummaryScreen() {
     (async () => {
       const now = new Date();
       try {
-        const staticGtfs = await getStaticGtfsService();
+        const staticGtfs = await getStaticGtfsService(c.agencyId ?? agencyId);
         const realtime = await realtimeGtfsService.fetchTripUpdatesForCommute(c, now);
-        const predictions = realtimeGtfsService.filterForCommute(realtime, c, now.getTime());
+        const matchStopIds = await matchStopIdsForCommute(c);
+        const predictions = realtimeGtfsService.filterForCommute(
+          realtime,
+          c,
+          now.getTime(),
+          matchStopIds
+        );
         const nextScheduled = staticGtfs.getScheduledArrivalsAfter(
           c.stopId,
           c.routeId,
@@ -109,7 +119,7 @@ export default function SummaryScreen() {
     (async () => {
       if (!draft.stopId) return;
       try {
-        const svc = await getStaticGtfsService();
+        const svc = await getStaticGtfsService(agencyId);
         const rows = svc.routesServingStop(draft.stopId);
         const selected = draft.selectedRouteIds ?? (draft.routeId ? [draft.routeId] : []);
         const items = rows
@@ -130,7 +140,7 @@ export default function SummaryScreen() {
     return () => {
       alive = false;
     };
-  }, [draft.stopId, draft.selectedRouteIds, draft.routeId]);
+  }, [draft.stopId, draft.selectedRouteIds, draft.routeId, agencyId]);
 
   const saved = draftToSaved(draft) ?? savedCommute;
 

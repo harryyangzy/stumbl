@@ -56,7 +56,8 @@ npm run ios
 ## Configuration
 
 - **`app.config.ts`** — app name, iOS bundle id (`ca.stumbl.app`), `expo-router`; **`expo-widgets` plugin is omitted when `EXPO_NO_WIDGETS=1`** (default `npm start`).
-- **`lib/config.ts`** — `USE_MOCK_REALTIME` (default `true` for offline dev), GTFS-RT URLs, timeouts, staleness window.
+- **`lib/transitAgencies.ts`** — London Transit (LTC) and Grand River Transit (GRT) configs, GTFS bundles, and realtime URLs.
+- **`lib/config.ts`** — re-exports shared realtime timing flags from `transitAgencies.ts`.
 - **`metro.config.js`** — bundles `.txt` GTFS files from `data/google_transit/`.
 
 ## Architecture (high level)
@@ -67,15 +68,24 @@ npm run ios
 | Onboarding flow | `app/(onboarding)/` |
 | Post-setup home | `app/(onboarding)/summary.tsx` (widget preview + edit slideover) |
 | Domain | `services/countdown/countdownService.ts` |
-| Static GTFS | `services/gtfs/staticGtfsService.ts` + `data/google_transit/*.txt` |
+| Static GTFS | `services/gtfs/staticGtfsService.ts` + `data/gtfs/{ltc,grt}/*.txt` |
 | Realtime GTFS-RT JSON | `services/realtime/realtimeGtfsService.ts` |
 | Widget mapping | `services/widget/widgetViewModel.ts` |
 | Persistence | `store/commuteStore.ts` (Zustand + AsyncStorage) |
 | iOS widget UI | `features/widget/StumblWidget.tsx` (`expo-widgets` + `@expo/ui` Swift UI) |
 
-Swap **static** feeds by replacing files under `data/google_transit/` (keep headers). Swap **realtime** by changing URLs in `lib/config.ts` or implementing a new fetcher behind `RealtimeGtfsService`.
+Swap **static** feeds by replacing files under `data/gtfs/ltc/` or `data/gtfs/grt/`. Swap **realtime** in `lib/transitAgencies.ts`.
 
-## Realtime endpoints (GRT)
+## Supported cities
+
+On first launch, pick **London Transit** or **Grand River Transit (Waterloo Region)** on the welcome screen. That choice drives stop search, routes, schedules, and live arrivals for the saved commute.
+
+| Agency | Static GTFS | Realtime |
+| --- | --- | --- |
+| London Transit (LTC) | `data/gtfs/ltc/` | `http://gtfs.ltconline.ca/TripUpdate/TripUpdates.pb` |
+| Grand River Transit (GRT) | `data/gtfs/grt/` | GRT bus + ION HTTPS feeds (merged) |
+
+## Realtime endpoints
 
 Grand River Transit publishes separate bus and ION (LRT) GTFS-RT protobuf feeds over HTTPS. The app merges both trip-update feeds:
 
@@ -109,9 +119,9 @@ Set `USE_MOCK_REALTIME` to `false` in `lib/config.ts` to use the live trip-updat
 
 ## Static GTFS note
 
-The committed `data/google_transit/` set is the **Grand River Transit** export (Kitchener, Waterloo, Cambridge). Refresh it periodically from [GRT open data](https://www.grt.ca/about-grt/open-data/) so schedules and `calendar_dates.txt` stay current. GRT uses `calendar_dates` (not `calendar.txt`) for which trips run on each day.
+Bundled feeds live in `data/gtfs/ltc/` (London) and `data/gtfs/grt/` (Waterloo Region). Refresh them from each agency’s open-data page when schedules change. GRT uses `calendar_dates` only; LTC uses `calendar.txt` plus `calendar_dates` exceptions.
 
-Extra files in `data/` (`GRT_Stops.csv`, `ION_Stops.csv`, sample `TripUpdates.pb`) are reference downloads and are **not** read by the app — only `data/google_transit/*.txt` is bundled.
+Extra files in `data/` (`GRT_Stops.csv`, `ION_Stops.csv`, sample `TripUpdates.pb`) are reference downloads and are **not** read by the app.
 
 ## Widget preview in the app
 

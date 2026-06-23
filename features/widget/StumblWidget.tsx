@@ -26,7 +26,8 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
     unitLabel: 'minutes',
     routeBadge: '2B',
     headsign: '',
-    footerLabel: 'leave in 14 minutes for next 2B',
+    footerTitle: 'leave in 14 minutes',
+    footerLabel: 'for next 2B',
     state: 'leave_in',
     mapsUrl: '',
     ...rawProps,
@@ -40,16 +41,17 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
     return Number(p.primaryValue) === 1 ? 'minute' : 'minutes';
   }
 
-  function getFooterTiming(p: WidgetDisplayProps) {
-    if (p.footerLabel) return p.footerLabel;
-    if (p.state === 'fallback') return 'Realtime unavailable';
+  function getFooterTitle(p: WidgetDisplayProps) {
+    if (p.state === 'fallback') return '';
     if (p.state === 'empty') return '';
-    if (p.state === 'due') return 'due now';
-    return '';
+    return p.footerTitle ?? '';
   }
 
-  function getFooterTitle(_p: WidgetDisplayProps, _timing: string) {
-    return '';
+  function getFooterSubtitle(p: WidgetDisplayProps) {
+    if (p.state === 'fallback') return 'Realtime unavailable';
+    if (p.state === 'empty') return '';
+    if (p.state === 'due') return p.footerLabel || 'due now';
+    return p.footerLabel ?? '';
   }
 
   const gold = '#F8BB36';
@@ -57,8 +59,9 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
   const cream = '#FBF2E5';
   const ink = '#000000';
   const primaryUnitLabel = getPrimaryUnitLabel(props);
-  const footerTiming = getFooterTiming(props);
-  const footerTitle = getFooterTitle(props, footerTiming);
+  const footerTitle = getFooterTitle(props);
+  const footerSubtitle = getFooterSubtitle(props);
+  const showFooter = Boolean(footerTitle || footerSubtitle);
 
   /**
    * Figma frame (node 565:28) is a 169×169 canvas but systemSmall widgets
@@ -126,7 +129,7 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
         <Rectangle modifiers={[foregroundStyle(ink), frame({ maxWidth: Infinity, height: 1 })]} />
         <Rectangle modifiers={[foregroundStyle('#FFFFFF'), frame({ maxWidth: Infinity, height: 52 })]} />
       </VStack>
-      {footerTiming ? (
+      {showFooter ? (
         <VStack
           alignment="leading"
           spacing={0}
@@ -141,9 +144,11 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
               {footerTitle}
             </Text>
           ) : null}
-          <Text modifiers={[font({ family: 'Parabolica-Regular', size: 12 }), foregroundStyle(ink)]}>
-            {footerTiming}
-          </Text>
+          {footerSubtitle ? (
+            <Text modifiers={[font({ family: 'Parabolica-Regular', size: 12 }), foregroundStyle(ink)]}>
+              {footerSubtitle}
+            </Text>
+          ) : null}
         </VStack>
       ) : null}
     </ZStack>

@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
+import { TRANSIT_AGENCY_LIST, type TransitAgencyId } from '@/lib/transitAgencies';
 import { theme } from '@/lib/theme';
 import { useCommuteStore } from '@/store/commuteStore';
 
@@ -51,11 +52,21 @@ function StumblWordmark() {
 export default function WelcomeScreen() {
   const router = useRouter();
   const resetDraft = useCommuteStore((s) => s.resetDraft);
+  const setDraft = useCommuteStore((s) => s.setDraft);
   const savedCommute = useCommuteStore((s) => s.savedCommute);
+  const draftAgency = useCommuteStore((s) => s.draft.agencyId);
+  const selectedAgency = draftAgency ?? savedCommute?.agencyId;
+
+  const onPickAgency = (agencyId: TransitAgencyId) => {
+    setDraft({ agencyId });
+  };
 
   const onStart = () => {
     if (!savedCommute) {
       resetDraft();
+      if (selectedAgency) {
+        setDraft({ agencyId: selectedAgency });
+      }
     }
     router.push('/(onboarding)/stop');
   };
@@ -71,8 +82,36 @@ export default function WelcomeScreen() {
               <Text style={styles.tag}>Stop waiting for the bus</Text>
             </View>
           </View>
+
+          <Text style={styles.cityHeading}>Choose your city</Text>
+          <View style={styles.cityRow}>
+            {TRANSIT_AGENCY_LIST.map((agency) => {
+              const selected = selectedAgency === agency.id;
+              return (
+                <Pressable
+                  key={agency.id}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                  onPress={() => onPickAgency(agency.id)}
+                  style={[styles.cityCard, selected && styles.cityCardSelected]}>
+                  <Text style={[styles.cityLabel, selected && styles.cityLabelSelected]}>
+                    {agency.label}
+                  </Text>
+                  <Text style={[styles.cityRegion, selected && styles.cityRegionSelected]}>
+                    {agency.region}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
           <View style={styles.ctaSpacer} />
-          <PrimaryButton title="Get Started" variant="ctaYellow" onPress={onStart} />
+          <PrimaryButton
+            title="Get Started"
+            variant="ctaYellow"
+            disabled={!selectedAgency}
+            onPress={onStart}
+          />
         </View>
       </View>
     </SafeAreaView>
@@ -96,6 +135,45 @@ const styles = StyleSheet.create({
   },
   brandBlock: {
     alignItems: 'center',
+  },
+  cityHeading: {
+    marginTop: 28,
+    fontFamily: theme.fonts.heading,
+    fontSize: theme.body,
+    color: theme.offWhite,
+  },
+  cityRow: {
+    marginTop: 12,
+    width: '100%',
+    gap: 10,
+  },
+  cityCard: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: theme.black,
+    backgroundColor: theme.offWhite,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  cityCardSelected: {
+    backgroundColor: theme.yellow,
+  },
+  cityLabel: {
+    fontFamily: theme.fonts.heading,
+    fontSize: theme.body,
+    color: theme.black,
+  },
+  cityLabelSelected: {
+    color: theme.black,
+  },
+  cityRegion: {
+    marginTop: 2,
+    fontFamily: theme.fonts.body,
+    fontSize: 14,
+    color: theme.black,
+  },
+  cityRegionSelected: {
+    color: theme.black,
   },
   ctaSpacer: {
     height: theme.welcomeTagToCta,

@@ -1,0 +1,64 @@
+export type TransitAgencyId = 'ltc' | 'grt';
+
+export type TransitAgencyConfig = {
+  id: TransitAgencyId;
+  label: string;
+  region: string;
+  /** GTFS calendar.txt + calendar_dates exceptions (LTC). */
+  calendarMode: 'calendar' | 'calendar_dates_only';
+  dedupeStopsByName: boolean;
+  excludeParentStations: boolean;
+  ionSupport: boolean;
+  realtime: {
+    tripUpdates: readonly string[];
+  };
+};
+
+export const TRANSIT_AGENCIES: Record<TransitAgencyId, TransitAgencyConfig> = {
+  ltc: {
+    id: 'ltc',
+    label: 'London Transit',
+    region: 'London, ON',
+    calendarMode: 'calendar',
+    dedupeStopsByName: false,
+    excludeParentStations: false,
+    ionSupport: false,
+    realtime: {
+      tripUpdates: ['http://gtfs.ltconline.ca/TripUpdate/TripUpdates.pb'],
+    },
+  },
+  grt: {
+    id: 'grt',
+    label: 'Grand River Transit',
+    region: 'Waterloo Region',
+    calendarMode: 'calendar_dates_only',
+    dedupeStopsByName: true,
+    excludeParentStations: true,
+    ionSupport: true,
+    realtime: {
+      tripUpdates: [
+        'https://webapps.regionofwaterloo.ca/api/grt-routes/api/tripupdates/1',
+        'https://webapps.regionofwaterloo.ca/api/grt-routes/api/tripupdates/2',
+      ],
+    },
+  },
+};
+
+export const TRANSIT_AGENCY_LIST = Object.values(TRANSIT_AGENCIES);
+
+export const DEFAULT_TRANSIT_AGENCY: TransitAgencyId = 'grt';
+
+export function getTransitAgency(id: TransitAgencyId | undefined | null): TransitAgencyConfig {
+  if (id && TRANSIT_AGENCIES[id]) return TRANSIT_AGENCIES[id];
+  return TRANSIT_AGENCIES[DEFAULT_TRANSIT_AGENCY];
+}
+
+/** Swap to false to hit live GTFS-RT endpoints (requires network). */
+export const USE_MOCK_REALTIME = false;
+
+export const REALTIME_FETCH_TIMEOUT_MS = 25_000;
+
+/** GTFS-RT header timestamp older than this is treated as stale. */
+export const REALTIME_STALE_AFTER_SEC = 120;
+
+export const GTFS_TIMEZONE = 'America/Toronto';

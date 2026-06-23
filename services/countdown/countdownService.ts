@@ -11,8 +11,10 @@ export type CountdownKind =
 
 export type CountdownState = {
   kind: CountdownKind;
-  /** Minutes until recommended leave (when kind is leave_in). */
+  /** Minutes until recommended leave (when kind is leave_in and >= 60s remain). */
   leaveMinutes?: number;
+  /** Seconds until leave when under one minute. */
+  leaveSeconds?: number;
   /** Minutes until bus arrives (when known). */
   busMinutes?: number;
   /** Seconds until bus arrives (when known). */
@@ -21,6 +23,8 @@ export type CountdownState = {
   nextBusArrivalSec?: number;
   /** Minutes until leave for the following bus (same walk + buffer as primary countdown). */
   nextBusLeaveMinutes?: number;
+  /** Seconds until leave for the following bus when under one minute. */
+  nextBusLeaveSeconds?: number;
   /** True when it's time to leave for the following bus. */
   nextBusLeaveNow?: boolean;
   /** True when the footer "next bus" timing comes from GTFS-RT (not static schedule). */
@@ -129,7 +133,9 @@ export function computeCountdownState(params: {
   const leaveAt = arrivalMs - walkMs - bufferMs;
   const busArrivalSec = Math.max(0, Math.ceil((arrivalMs - nowMs) / 1000));
   const busMinutes = Math.max(0, Math.ceil((arrivalMs - nowMs) / 60_000));
-  const leaveMinutes = Math.max(0, Math.ceil((leaveAt - nowMs) / 60_000));
+  const leaveSecRemaining = Math.max(0, Math.ceil((leaveAt - nowMs) / 1000));
+  const leaveMinutes = leaveSecRemaining >= 60 ? Math.ceil(leaveSecRemaining / 60) : 0;
+  const leaveSeconds = leaveSecRemaining > 0 && leaveSecRemaining < 60 ? leaveSecRemaining : undefined;
   const nextBusArrivalMs =
     preds.length > 0 ? nextRealtimeArrivalAfter(preds, arrivalMs, nowMs) : null;
   const nextBusArrivalSec =
@@ -138,22 +144,33 @@ export function computeCountdownState(params: {
       : Math.max(0, Math.ceil((nextBusArrivalMs - nowMs) / 1000));
   const nextBusFromRealtime = nextBusArrivalMs != null;
   let nextBusLeaveMinutes: number | undefined;
+  let nextBusLeaveSeconds: number | undefined;
   let nextBusLeaveNow = false;
   if (nextBusArrivalMs != null) {
     const nextLeaveAt = nextBusArrivalMs - walkMs - bufferMs;
     nextBusLeaveNow = nowMs >= nextLeaveAt && nowMs < nextBusArrivalMs;
-    nextBusLeaveMinutes = Math.max(0, Math.ceil((nextLeaveAt - nowMs) / 60_000));
+    const nextLeaveSecRemaining = Math.max(0, Math.ceil((nextLeaveAt - nowMs) / 1000));
+    if (nextLeaveSecRemaining > 0 && nextLeaveSecRemaining < 60) {
+      nextBusLeaveSeconds = nextLeaveSecRemaining;
+    } else {
+      nextBusLeaveMinutes = Math.max(0, Math.ceil(nextLeaveSecRemaining / 60));
+    }
   }
+
+  const sharedNext = {
+    nextBusArrivalSec,
+    nextBusLeaveMinutes,
+    nextBusLeaveSeconds,
+    nextBusLeaveNow,
+    nextBusFromRealtime,
+  };
 
   if (arrivalMs - nowMs <= 90_000) {
     return {
       kind: 'due',
       busMinutes,
       busArrivalSec,
-      nextBusArrivalSec,
-      nextBusLeaveMinutes,
-      nextBusLeaveNow,
-      nextBusFromRealtime,
+      ...sharedNext,
       routeShort: commute.routeShortName,
       headsign: commute.headsign ?? commute.routeShortName,
       mapsUrl,
@@ -167,10 +184,7 @@ export function computeCountdownState(params: {
       leaveMinutes: 0,
       busMinutes,
       busArrivalSec,
-      nextBusArrivalSec,
-      nextBusLeaveMinutes,
-      nextBusLeaveNow,
-      nextBusFromRealtime,
+      ...sharedNext,
       routeShort: commute.routeShortName,
       headsign: commute.headsign ?? commute.routeShortName,
       mapsUrl,
@@ -181,12 +195,10 @@ export function computeCountdownState(params: {
   return {
     kind: 'leave_in',
     leaveMinutes,
+    leaveSeconds,
     busMinutes,
     busArrivalSec,
-    nextBusArrivalSec,
-    nextBusLeaveMinutes,
-    nextBusLeaveNow,
-    nextBusFromRealtime,
+    ...sharedNext,
     routeShort: commute.routeShortName,
     headsign: commute.headsign ?? commute.routeShortName,
     mapsUrl,

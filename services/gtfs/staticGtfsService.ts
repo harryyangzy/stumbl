@@ -2,13 +2,71 @@ import { Asset } from 'expo-asset';
 import { readAsStringAsync } from 'expo-file-system/legacy';
 
 import { parseGtfsTable } from '@/lib/csv';
+import {
+  buildStaticStopIdsByIonKey,
+  ION_ROUTE_ID,
+  ION_ROUTE_SHORT,
+  ionStationKeyFromStopName,
+  isIonLrtStation,
+} from '@/lib/grtIonStopMap';
+import {
+  getTransitAgency,
+  type TransitAgencyConfig,
+  type TransitAgencyId,
+} from '@/lib/transitAgencies';
 import type { GtfsRoute, GtfsStop, GtfsStopTime, GtfsTrip } from '@/types/gtfs';
 
-import routesTxt from '../../data/google_transit/routes.txt';
-import calendarDatesTxt from '../../data/google_transit/calendar_dates.txt';
-import stopTimesTxt from '../../data/google_transit/stop_times.txt';
-import stopsTxt from '../../data/google_transit/stops.txt';
-import tripsTxt from '../../data/google_transit/trips.txt';
+import ltcCalendarDatesTxt from '../../data/gtfs/ltc/calendar_dates.txt';
+import ltcCalendarTxt from '../../data/gtfs/ltc/calendar.txt';
+import ltcRoutesTxt from '../../data/gtfs/ltc/routes.txt';
+import ltcStopTimesTxt from '../../data/gtfs/ltc/stop_times.txt';
+import ltcStopsTxt from '../../data/gtfs/ltc/stops.txt';
+import ltcTripsTxt from '../../data/gtfs/ltc/trips.txt';
+import grtCalendarDatesTxt from '../../data/gtfs/grt/calendar_dates.txt';
+import grtRoutesTxt from '../../data/gtfs/grt/routes.txt';
+import grtStopTimesTxt from '../../data/gtfs/grt/stop_times.txt';
+import grtStopsTxt from '../../data/gtfs/grt/stops.txt';
+import grtTripsTxt from '../../data/gtfs/grt/trips.txt';
+
+type GtfsBundleModules = {
+  stops: number;
+  routes: number;
+  trips: number;
+  stopTimes: number;
+  calendarDates: number;
+  calendar?: number;
+};
+
+const GTFS_BUNDLES: Record<TransitAgencyId, GtfsBundleModules> = {
+  ltc: {
+    stops: ltcStopsTxt,
+    routes: ltcRoutesTxt,
+    trips: ltcTripsTxt,
+    stopTimes: ltcStopTimesTxt,
+    calendarDates: ltcCalendarDatesTxt,
+    calendar: ltcCalendarTxt,
+  },
+  grt: {
+    stops: grtStopsTxt,
+    routes: grtRoutesTxt,
+    trips: grtTripsTxt,
+    stopTimes: grtStopTimesTxt,
+    calendarDates: grtCalendarDatesTxt,
+  },
+};
+
+type CalendarRow = {
+  serviceId: string;
+  startDate: string;
+  endDate: string;
+  weekdays: boolean[];
+};
+
+type CalendarException = {
+  serviceId: string;
+  date: string;
+  added: boolean;
+};
 
 async function loadBundledText(mod: number): Promise<string> {
   const asset = Asset.fromModule(mod);
@@ -21,7 +79,6 @@ function normalizeQuery(q: string): string {
   return q.trim().toLowerCase();
 }
 
-/** Lowercase words (letters/digits only) for fuzzy name matching. */
 function normalizeMatchWords(s: string): string {
   const parts =
     s
@@ -32,12 +89,10 @@ function normalizeMatchWords(s: string): string {
   return parts.join(' ');
 }
 
-/** All alnum from name/query, no spaces — "Main St" → "mainst". */
 function alnumCompressed(s: string): string {
   return normalizeMatchWords(s).replace(/\s/g, '');
 }
 
-/** True if every character of `needle` appears in order in `haystack`. */
 function subsequenceMatch(haystack: string, needle: string): boolean {
   if (!needle) return true;
   let i = 0;
@@ -47,7 +102,6 @@ function subsequenceMatch(haystack: string, needle: string): boolean {
   return i === needle.length;
 }
 
-/** Query normalized once per search; stop fields precomputed at GTFS load. */
 function scoreStopMatchPrecomputed(
   qTrim: string,
   qWords: string,
@@ -78,28 +132,11 @@ function scoreStopMatchPrecomputed(
   return 0;
 }
 
-/** YYYYMMDD in local time — matches GTFS calendar_dates.date. */
 export function formatGtfsServiceDate(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}${m}${day}`;
-}
-
-/**
- * Service IDs active on a calendar day.
- * GRT uses calendar_dates-only feeds (exception_type 1 = service runs that day).
- * Falls back to WEEKDAY/SAT/SUN when no calendar_dates are loaded (legacy LTC-style feeds).
- */
-export function serviceIdsForLocalDate(d: Date, calendarDatesByYmd?: Map<string, Set<string>>): string[] {
-  if (calendarDatesByYmd) {
-    const ids = calendarDatesByYmd.get(formatGtfsServiceDate(d));
-    return ids ? [...ids] : [];
-  }
-  const day = d.getDay();
-  if (day === 0) return ['SUN'];
-  if (day === 6) return ['SAT'];
-  return ['WEEKDAY'];
 }
 
 export function gtfsClockToDate(serviceDayStart: Date, clock: string): Date {
@@ -121,33 +158,98 @@ export function gtfsClockToDate(serviceDayStart: Date, clock: string): Date {
 type StopSearchRow = { stop: GtfsStop; nameWords: string; nameComp: string };
 
 export class StaticGtfsService {
+  readonly agencyId: TransitAgencyId;
+  private agency: TransitAgencyConfig;
   private stops: GtfsStop[] = [];
-  /** Precomputed at load — avoids NFD/regex on every stop on every keystroke (~2k stops). */
   private stopSearchRows: StopSearchRow[] = [];
   private routes = new Map<string, GtfsRoute>();
   private trips = new Map<string, GtfsTrip>();
   private tripsByRoute = new Map<string, GtfsTrip[]>();
-  private stopTimesByTrip = new Map<string, GtfsStopTime[]>();
   private stopTimesAtStop = new Map<string, GtfsStopTime[]>();
-  /** service_id sets keyed by YYYYMMDD from calendar_dates.txt */
-  private calendarDatesByYmd = new Map<string, Set<string>>();
+  private calendarRows: CalendarRow[] = [];
+  private calendarExceptions: CalendarException[] = [];
+  private calendarDatesOnlyByYmd = new Map<string, Set<string>>();
+  private ionStopIdsByKey = new Map<string, Set<string>>();
+
+  constructor(agencyId: TransitAgencyId) {
+    this.agencyId = agencyId;
+    this.agency = getTransitAgency(agencyId);
+  }
+
+  private dedupeStopsByName(stops: GtfsStop[]): GtfsStop[] {
+    const seen = new Set<string>();
+    const out: GtfsStop[] = [];
+    for (const stop of stops) {
+      const key = normalizeMatchWords(stop.stopName);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push(stop);
+    }
+    return out;
+  }
+
+  private maybeDedupeStops(stops: GtfsStop[]): GtfsStop[] {
+    return this.agency.dedupeStopsByName ? this.dedupeStopsByName(stops) : stops;
+  }
+
+  private serviceIdsForDate(d: Date): Set<string> {
+    if (this.agency.calendarMode === 'calendar_dates_only') {
+      return new Set(this.calendarDatesOnlyByYmd.get(formatGtfsServiceDate(d)) ?? []);
+    }
+
+    const ymd = formatGtfsServiceDate(d);
+    const day = d.getDay();
+    const ids = new Set<string>();
+    for (const row of this.calendarRows) {
+      if (ymd >= row.startDate && ymd <= row.endDate && row.weekdays[day]) {
+        ids.add(row.serviceId);
+      }
+    }
+    for (const ex of this.calendarExceptions) {
+      if (ex.date !== ymd) continue;
+      if (ex.added) ids.add(ex.serviceId);
+      else ids.delete(ex.serviceId);
+    }
+    return ids;
+  }
 
   async load(): Promise<void> {
-    const [stopsRaw, routesRaw, tripsRaw, stopTimesRaw, calendarDatesRaw] = await Promise.all([
-      loadBundledText(stopsTxt),
-      loadBundledText(routesTxt),
-      loadBundledText(tripsTxt),
-      loadBundledText(stopTimesTxt),
-      loadBundledText(calendarDatesTxt),
-    ]);
+    const bundle = GTFS_BUNDLES[this.agencyId];
+    const loads: Promise<string>[] = [
+      loadBundledText(bundle.stops),
+      loadBundledText(bundle.routes),
+      loadBundledText(bundle.trips),
+      loadBundledText(bundle.stopTimes),
+      loadBundledText(bundle.calendarDates),
+    ];
+    if (bundle.calendar != null) {
+      loads.push(loadBundledText(bundle.calendar));
+    }
 
-    this.stops = parseGtfsTable(stopsRaw).map((r) => ({
+    const raw = await Promise.all(loads);
+    const stopsRaw = raw[0];
+    const routesRaw = raw[1];
+    const tripsRaw = raw[2];
+    const stopTimesRaw = raw[3];
+    const calendarDatesRaw = raw[4];
+    const calendarRaw = raw[5];
+
+    let stopRows = parseGtfsTable(stopsRaw);
+    if (this.agency.excludeParentStations) {
+      stopRows = stopRows.filter((r) => r.location_type !== '1');
+    }
+
+    this.stops = stopRows.map((r) => ({
       stopId: r.stop_id,
       stopName: r.stop_name,
       stopLat: parseFloat(r.stop_lat),
       stopLon: parseFloat(r.stop_lon),
       stopCode: r.stop_code || null,
     }));
+
+    this.ionStopIdsByKey = this.agency.ionSupport
+      ? buildStaticStopIdsByIonKey(this.stops)
+      : new Map();
 
     this.stopSearchRows = this.stops.map((stop) => ({
       stop,
@@ -160,6 +262,14 @@ export class StaticGtfsService {
         routeId: r.route_id,
         shortName: r.route_short_name,
         longName: r.route_long_name,
+      });
+    }
+
+    if (this.agency.ionSupport && !this.routes.has(ION_ROUTE_ID)) {
+      this.routes.set(ION_ROUTE_ID, {
+        routeId: ION_ROUTE_ID,
+        shortName: ION_ROUTE_SHORT,
+        longName: 'ION',
       });
     }
 
@@ -183,42 +293,53 @@ export class StaticGtfsService {
         arrivalTime: r.arrival_time,
         stopSequence: parseInt(r.stop_sequence, 10),
       };
-      const byTrip = this.stopTimesByTrip.get(st.tripId) ?? [];
-      byTrip.push(st);
-      this.stopTimesByTrip.set(st.tripId, byTrip);
       const atStop = this.stopTimesAtStop.get(st.stopId) ?? [];
       atStop.push(st);
       this.stopTimesAtStop.set(st.stopId, atStop);
     }
 
-    for (const [, arr] of this.stopTimesByTrip) {
-      arr.sort((a, b) => a.stopSequence - b.stopSequence);
-    }
-
-    this.calendarDatesByYmd = new Map();
-    for (const r of parseGtfsTable(calendarDatesRaw)) {
-      if (r.exception_type !== '1') continue;
-      const date = r.date;
-      const serviceId = r.service_id;
-      if (!date || !serviceId) continue;
-      const set = this.calendarDatesByYmd.get(date) ?? new Set<string>();
-      set.add(serviceId);
-      this.calendarDatesByYmd.set(date, set);
+    if (this.agency.calendarMode === 'calendar_dates_only') {
+      this.calendarDatesOnlyByYmd = new Map();
+      for (const r of parseGtfsTable(calendarDatesRaw)) {
+        if (r.exception_type !== '1') continue;
+        const date = r.date;
+        const serviceId = r.service_id;
+        if (!date || !serviceId) continue;
+        const set = this.calendarDatesOnlyByYmd.get(date) ?? new Set<string>();
+        set.add(serviceId);
+        this.calendarDatesOnlyByYmd.set(date, set);
+      }
+    } else if (calendarRaw) {
+      this.calendarRows = parseGtfsTable(calendarRaw).map((r) => ({
+        serviceId: r.service_id,
+        startDate: r.start_date,
+        endDate: r.end_date,
+        weekdays: [
+          r.sunday === '1',
+          r.monday === '1',
+          r.tuesday === '1',
+          r.wednesday === '1',
+          r.thursday === '1',
+          r.friday === '1',
+          r.saturday === '1',
+        ],
+      }));
+      this.calendarExceptions = parseGtfsTable(calendarDatesRaw).map((r) => ({
+        serviceId: r.service_id,
+        date: r.date,
+        added: r.exception_type === '1',
+      }));
     }
   }
 
   searchStops(query: string, limit = 40): GtfsStop[] {
     const q = normalizeQuery(query);
-    if (!q) {
-      return [];
-    }
+    if (!q) return [];
 
     const qTrim = query.trim().toLowerCase();
     const qWords = normalizeMatchWords(query);
     const qComp = alnumCompressed(query);
-    if (!qComp) {
-      return [];
-    }
+    if (!qComp) return [];
 
     const scored: { stop: GtfsStop; score: number }[] = [];
     for (const row of this.stopSearchRows) {
@@ -237,10 +358,9 @@ export class StaticGtfsService {
         b.score - a.score ||
         a.stop.stopName.localeCompare(b.stop.stopName, undefined, { sensitivity: 'base' })
     );
-    return scored.slice(0, limit).map((x) => x.stop);
+    return this.maybeDedupeStops(scored.map((x) => x.stop)).slice(0, limit);
   }
 
-  /** Bounding box of all stops, slightly padded — used to constrain address geocoding. */
   bounds(): { minLat: number; maxLat: number; minLon: number; maxLon: number } {
     let minLat = Infinity;
     let maxLat = -Infinity;
@@ -253,7 +373,7 @@ export class StaticGtfsService {
       if (s.stopLon < minLon) minLon = s.stopLon;
       if (s.stopLon > maxLon) maxLon = s.stopLon;
     }
-    const pad = 0.02; // ~2 km so addresses just outside the outermost stop still resolve
+    const pad = 0.02;
     return {
       minLat: minLat - pad,
       maxLat: maxLat + pad,
@@ -262,7 +382,6 @@ export class StaticGtfsService {
     };
   }
 
-  /** Stops closest to a point, nearest first (equirectangular approx — fine at city scale). */
   nearestStops(lat: number, lon: number, limit = 4): GtfsStop[] {
     const cosLat = Math.cos((lat * Math.PI) / 180);
     const scored: { stop: GtfsStop; d2: number }[] = [];
@@ -273,7 +392,7 @@ export class StaticGtfsService {
       scored.push({ stop: s, d2: dLat * dLat + dLon * dLon });
     }
     scored.sort((a, b) => a.d2 - b.d2);
-    return scored.slice(0, limit).map((x) => x.stop);
+    return this.maybeDedupeStops(scored.map((x) => x.stop)).slice(0, limit);
   }
 
   routesServingStop(stopId: string): { route: GtfsRoute; headsign: string }[] {
@@ -284,24 +403,36 @@ export class StaticGtfsService {
       if (!trip) continue;
       const route = this.routes.get(trip.routeId);
       if (!route) continue;
-      const key = trip.routeId;
-      if (!seen.has(key)) {
-        seen.set(key, { route, headsign: trip.headsign });
+      if (!seen.has(trip.routeId)) {
+        seen.set(trip.routeId, { route, headsign: trip.headsign });
       }
     }
+
+    if (this.agency.ionSupport) {
+      const stop = this.getStop(stopId);
+      if (stop && isIonLrtStation(stop.stopName)) {
+        const ionRoute = this.routes.get(ION_ROUTE_ID);
+        if (ionRoute && !seen.has(ION_ROUTE_ID)) {
+          seen.set(ION_ROUTE_ID, {
+            route: ionRoute,
+            headsign:
+              ionStationKeyFromStopName(stop.stopName) === 'conestoga' ? 'Fairway' : 'Conestoga',
+          });
+        }
+      }
+    }
+
     return [...seen.values()].sort((a, b) =>
       a.route.shortName.localeCompare(b.route.shortName, undefined, { numeric: true })
     );
   }
 
-  /**
-   * Next scheduled arrivals at stop for route after `after` (local device clock).
-   * Uses service_ids for the calendar day of `after`.
-   */
+  ionStopIdsByStationKey(): Map<string, Set<string>> {
+    return this.ionStopIdsByKey;
+  }
+
   getScheduledArrivalsAfter(stopId: string, routeId: string, after: Date, count = 4): Date[] {
-    const calendar =
-      this.calendarDatesByYmd.size > 0 ? this.calendarDatesByYmd : undefined;
-    const serviceIds = new Set(serviceIdsForLocalDate(after, calendar));
+    const serviceIds = this.serviceIdsForDate(after);
     const tripsForRoute = this.tripsByRoute.get(routeId) ?? [];
     const tripIds = new Set(
       tripsForRoute.filter((t) => serviceIds.has(t.serviceId)).map((t) => t.tripId)
@@ -314,9 +445,7 @@ export class StaticGtfsService {
     for (const st of this.stopTimesAtStop.get(stopId) ?? []) {
       if (!tripIds.has(st.tripId)) continue;
       const dt = gtfsClockToDate(serviceDayStart, st.arrivalTime);
-      if (dt.getTime() > after.getTime()) {
-        candidates.push(dt);
-      }
+      if (dt.getTime() > after.getTime()) candidates.push(dt);
     }
 
     candidates.sort((a, b) => a.getTime() - b.getTime());
@@ -325,14 +454,13 @@ export class StaticGtfsService {
     nextDayStart.setDate(nextDayStart.getDate() + 1);
 
     if (candidates.length < count) {
-      const nextServiceIds = new Set(serviceIdsForLocalDate(nextDayStart, calendar));
+      const nextServiceIds = this.serviceIdsForDate(nextDayStart);
       const nextTripIds = new Set(
         tripsForRoute.filter((t) => nextServiceIds.has(t.serviceId)).map((t) => t.tripId)
       );
       for (const st of this.stopTimesAtStop.get(stopId) ?? []) {
         if (!nextTripIds.has(st.tripId)) continue;
-        const dt = gtfsClockToDate(nextDayStart, st.arrivalTime);
-        candidates.push(dt);
+        candidates.push(gtfsClockToDate(nextDayStart, st.arrivalTime));
       }
       candidates.sort((a, b) => a.getTime() - b.getTime());
     }
@@ -349,13 +477,16 @@ export class StaticGtfsService {
   }
 }
 
-let singleton: StaticGtfsService | null = null;
+const singletons = new Map<TransitAgencyId, StaticGtfsService>();
 
-export async function getStaticGtfsService(): Promise<StaticGtfsService> {
-  if (!singleton) {
-    const next = new StaticGtfsService();
-    await next.load();
-    singleton = next;
+export async function getStaticGtfsService(
+  agencyId: TransitAgencyId = 'grt'
+): Promise<StaticGtfsService> {
+  let svc = singletons.get(agencyId);
+  if (!svc) {
+    svc = new StaticGtfsService(agencyId);
+    await svc.load();
+    singletons.set(agencyId, svc);
   }
-  return singleton;
+  return svc;
 }

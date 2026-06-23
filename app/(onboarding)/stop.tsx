@@ -20,6 +20,7 @@ import { theme } from '@/lib/theme';
 import { searchAddresses, type AddressResult } from '@/services/geocoding/geocodingService';
 import { getStaticGtfsService } from '@/services/gtfs/staticGtfsService';
 import type { GtfsStop } from '@/types/gtfs';
+import { useTransitAgencyId } from '@/hooks/useTransitAgencyId';
 import { useCommuteStore } from '@/store/commuteStore';
 
 /**
@@ -47,6 +48,7 @@ export default function StopScreen() {
   const { height: windowHeight } = useWindowDimensions();
   const draft = useCommuteStore((s) => s.draft);
   const setDraft = useCommuteStore((s) => s.setDraft);
+  const agencyId = useTransitAgencyId();
 
   /** Push main block down from top (~⅓ screen minus 100px vs earlier tuning). */
   const scrollContentPaddingTop =
@@ -79,19 +81,19 @@ export default function StopScreen() {
       return;
     }
     try {
-      const svc = await getStaticGtfsService();
+      const svc = await getStaticGtfsService(agencyId);
       if (seq !== searchSeq.current) return;
       setResults(svc.searchStops(query, 4));
     } catch {
       if (seq === searchSeq.current) setResults([]);
     }
-  }, []);
+  }, [agencyId]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        await getStaticGtfsService();
+        await getStaticGtfsService(agencyId);
       } catch {
         /* load errors surface as empty results; singleton not stuck half-initialized */
       } finally {
@@ -101,7 +103,7 @@ export default function StopScreen() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [agencyId]);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -119,13 +121,13 @@ export default function StopScreen() {
       return;
     }
     try {
-      const svc = await getStaticGtfsService();
+      const svc = await getStaticGtfsService(agencyId);
       const found = await searchAddresses(trimmed, svc.bounds(), 2);
       if (seq === addressSeq.current) setAddressResults(found);
     } catch {
       if (seq === addressSeq.current) setAddressResults([]);
     }
-  }, []);
+  }, [agencyId]);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -172,7 +174,7 @@ export default function StopScreen() {
   const onPickAddress = async (a: AddressResult) => {
     Keyboard.dismiss();
     try {
-      const svc = await getStaticGtfsService();
+      const svc = await getStaticGtfsService(agencyId);
       setAddressStops({ label: a.label, stops: svc.nearestStops(a.lat, a.lon, 4) });
     } catch {
       /* keep current list if GTFS unexpectedly unavailable */

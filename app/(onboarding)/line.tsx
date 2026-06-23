@@ -9,6 +9,7 @@ import { RouteSelectRow } from '@/components/ui/RouteSelectRow';
 import { formatLineDestinationLabel } from '@/lib/routeLineLabel';
 import { theme } from '@/lib/theme';
 import { getStaticGtfsService } from '@/services/gtfs/staticGtfsService';
+import { useTransitAgencyId } from '@/hooks/useTransitAgencyId';
 import { useCommuteStore } from '@/store/commuteStore';
 
 const TITLE_TO_SUB_GAP = theme.headingLineGap - 2;
@@ -21,6 +22,7 @@ export default function LineScreen() {
   const isEdit = useLocalSearchParams<{ edit?: string }>().edit === '1';
   const draft = useCommuteStore((s) => s.draft);
   const setDraft = useCommuteStore((s) => s.setDraft);
+  const agencyId = useTransitAgencyId();
 
   const [loading, setLoading] = useState(true);
   const [options, setOptions] = useState<LineOption[]>([]);
@@ -32,7 +34,7 @@ export default function LineScreen() {
         setLoading(false);
         return;
       }
-      const svc = await getStaticGtfsService();
+      const svc = await getStaticGtfsService(agencyId);
       const rows = svc.routesServingStop(draft.stopId);
       if (!cancelled) {
         setOptions(
@@ -48,7 +50,7 @@ export default function LineScreen() {
     return () => {
       cancelled = true;
     };
-  }, [draft.stopId]);
+  }, [draft.stopId, agencyId]);
 
   const selectedIds = useMemo(
     () => draft.selectedRouteIds ?? (draft.routeId ? [draft.routeId] : []),

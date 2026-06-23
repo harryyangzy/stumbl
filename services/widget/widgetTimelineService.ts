@@ -3,7 +3,7 @@ import { widgetMapsUrlBridge } from '@/lib/widgetBridge';
 import { computeCountdownState } from '@/services/countdown/countdownService';
 import { buildGoogleMapsCoordinateUrl } from '@/services/maps/googleMaps';
 import { getStaticGtfsService } from '@/services/gtfs/staticGtfsService';
-import { realtimeGtfsService } from '@/services/realtime/realtimeGtfsService';
+import { realtimeGtfsService, matchStopIdsForCommute } from '@/services/realtime/realtimeGtfsService';
 import {
   countdownToWidgetProps,
   type WidgetDisplayProps,
@@ -61,8 +61,9 @@ export async function refreshWidgetTimeline(
   widgetMapsUrlBridge.current = mapsUrl;
 
   try {
-    const staticGtfs = await getStaticGtfsService();
+    const staticGtfs = await getStaticGtfsService(commute.agencyId ?? 'grt');
     const realtime = await realtimeGtfsService.fetchTripUpdatesForCommute(commute, now);
+    const matchStopIds = await matchStopIdsForCommute(commute);
 
     const entries: { date: Date; props: WidgetDisplayProps }[] = [];
     for (let i = 0; i <= TIMELINE_HORIZON_MIN; i++) {
@@ -76,7 +77,12 @@ export async function refreshWidgetTimeline(
         realtime.feedTimestampSec === null
           ? realtime
           : { ...realtime, feedTimestampSec: Math.floor(at.getTime() / 1000) };
-      const predictions = realtimeGtfsService.filterForCommute(realtime, commute, at.getTime());
+      const predictions = realtimeGtfsService.filterForCommute(
+        realtime,
+        commute,
+        at.getTime(),
+        matchStopIds
+      );
       const nextScheduled = staticGtfs.getScheduledArrivalsAfter(
         commute.stopId,
         commute.routeId,

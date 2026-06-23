@@ -1,6 +1,9 @@
 import GtfsRealtimeBindings from 'gtfs-realtime-bindings';
 
-import { REALTIME_ENDPOINTS, REALTIME_FETCH_TIMEOUT_MS, USE_MOCK_REALTIME } from '@/lib/config';
+import { USE_MOCK_REALTIME, REALTIME_FETCH_TIMEOUT_MS } from '@/lib/config';
+import { resolveIonStopIds } from '@/lib/grtIonStopMap';
+import { getTransitAgency } from '@/lib/transitAgencies';
+import { getStaticGtfsService } from '@/services/gtfs/staticGtfsService';
 import type { SavedCommute } from '@/types/commute';
 import type { ArrivalPrediction, RealtimeFetchResult } from '@/types/realtime';
 
@@ -168,13 +171,27 @@ export function mockRealtimeForCommute(commute: SavedCommute, now: Date): Realti
   };
 }
 
+export async function matchStopIdsForCommute(commute: SavedCommute): Promise<Set<string>> {
+  const agency = getTransitAgency(commute.agencyId);
+  if (!agency.ionSupport) {
+    return new Set([commute.stopId]);
+  }
+  const staticGtfs = await getStaticGtfsService(commute.agencyId);
+  return resolveIonStopIds({
+    stopId: commute.stopId,
+    stopName: commute.stopName,
+    staticStopIdsByIonKey: staticGtfs.ionStopIdsByStationKey(),
+  });
+}
+
 export class RealtimeGtfsService {
   async fetchTripUpdatesForCommute(commute: SavedCommute, now: Date): Promise<RealtimeFetchResult> {
     if (USE_MOCK_REALTIME) {
       return mockRealtimeForCommute(commute, now);
     }
     try {
-      return await fetchTripUpdatesFromEndpoints(REALTIME_ENDPOINTS.tripUpdates);
+      const agency = getTransitAgency(commute.agencyId);
+      return await fetchTripUpdatesFromEndpoints(agency.realtime.tripUpdates);
     } catch {
       return { predictions: [], feedTimestampSec: null, source: 'unavailable' };
     }
@@ -183,10 +200,11 @@ export class RealtimeGtfsService {
   filterForCommute(
     result: RealtimeFetchResult,
     commute: SavedCommute,
-    nowMs: number = Date.now()
+    nowMs: number = Date.now(),
+    matchStopIds: Set<string> = new Set([commute.stopId])
   ): ArrivalPrediction[] {
     return result.predictions
-      .filter((p) => p.stopId === commute.stopId && p.routeId === commute.routeId)
+      .filter((p) => matchStopIds.has(p.stopId) && p.routeId === commute.routeId)
       .filter((p) => p.arrivalTimeSec * 1000 > nowMs - 60 * 1000)
       .sort((a, b) => a.arrivalTimeSec - b.arrivalTimeSec);
   }

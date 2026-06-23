@@ -48,6 +48,12 @@ const config: ExpoConfig = {
       ITSAppUsesNonExemptEncryption: false,
       NSAppTransportSecurity: {
         NSAllowsArbitraryLoads: false,
+        NSExceptionDomains: {
+          'gtfs.ltconline.ca': {
+            NSExceptionAllowsInsecureHTTPLoads: true,
+            NSIncludesSubdomains: true,
+          },
+        },
       },
     },
   },

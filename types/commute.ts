@@ -1,4 +1,8 @@
+import type { TransitAgencyId } from '@/lib/transitAgencies';
+
 export type SavedCommute = {
+  /** Omitted on commutes saved before multi-city support — treated as GRT. */
+  agencyId?: TransitAgencyId;
   stopId: string;
   stopName: string;
   stopLat: number;

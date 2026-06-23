@@ -2,9 +2,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import { DEFAULT_TRANSIT_AGENCY } from '@/lib/transitAgencies';
+import type { TransitAgencyId } from '@/lib/transitAgencies';
 import type { SavedCommute } from '@/types/commute';
 
 export type OnboardingDraft = {
+  agencyId?: TransitAgencyId;
   stopId?: string;
   stopName?: string;
   stopLat?: number;
@@ -42,6 +45,7 @@ export const useCommuteStore = create<CommuteState>()(
         if (!c) return;
         set({
           draft: {
+            agencyId: c.agencyId ?? DEFAULT_TRANSIT_AGENCY,
             stopId: c.stopId,
             stopName: c.stopName,
             stopLat: c.stopLat,

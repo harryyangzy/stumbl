@@ -19,7 +19,7 @@ const FOOTER = CARD - HERO;
 export function WidgetPreviewCard({ model }: Props) {
   const unitLabel = getWidgetPrimaryUnitLabel(model);
   const footerTitle = getWidgetFooterTitle(model);
-  const footerTiming = model.footerLabel;
+  const footerSubtitle = model.footerLabel;
 
   return (
     <View style={styles.card}>
@@ -32,7 +32,7 @@ export function WidgetPreviewCard({ model }: Props) {
       </View>
       <View style={styles.footer}>
         {footerTitle ? <Text style={styles.footerText}>{footerTitle}</Text> : null}
-        {footerTiming ? <Text style={styles.footerText}>{footerTiming}</Text> : null}
+        {footerSubtitle ? <Text style={styles.footerText}>{footerSubtitle}</Text> : null}
       </View>
     </View>
   );
