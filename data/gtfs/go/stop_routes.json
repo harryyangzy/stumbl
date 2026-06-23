@@ -1,0 +1,522 @@
+{
+  "UN": [
+    {
+      "routeId": "06260926-ST",
+      "shortName": "ST",
+      "headsign": "ST - Union Station GO"
+    },
+    {
+      "routeId": "06260926-LE",
+      "shortName": "LE",
+      "headsign": "LE - Union Station GO"
+    },
+    {
+      "routeId": "06260926-LW",
+      "shortName": "LW",
+      "headsign": "LW - Union Station GO"
+    },
+    {
+      "routeId": "06260926-GT",
+      "shortName": "KI",
+      "headsign": "KI - Union Station GO"
+    },
+    {
+      "routeId": "06260926-MI",
+      "shortName": "MI",
+      "headsign": "MI - Milton GO"
+    },
+    {
+      "routeId": "06260926-BR",
+      "shortName": "BR",
+      "headsign": "BR - Union Station GO"
+    },
+    {
+      "routeId": "06260926-RH",
+      "shortName": "RH",
+      "headsign": "RH - Union Station GO"
+    }
+  ],
+  "KE": [
+    {
+      "routeId": "06260926-ST",
+      "shortName": "ST",
+      "headsign": "ST - Union Station GO"
+    }
+  ],
+  "AG": [
+    {
+      "routeId": "06260926-ST",
+      "shortName": "ST",
+      "headsign": "ST - Union Station GO"
+    }
+  ],
+  "MK": [
+    {
+      "routeId": "06260926-ST",
+      "shortName": "ST",
+      "headsign": "ST - Union Station GO"
+    }
+  ],
+  "UI": [
+    {
+      "routeId": "06260926-ST",
+      "shortName": "ST",
+      "headsign": "ST - Union Station GO"
+    }
+  ],
+  "CE": [
+    {
+      "routeId": "06260926-ST",
+      "shortName": "ST",
+      "headsign": "ST - Union Station GO"
+    }
+  ],
+  "MR": [
+    {
+      "routeId": "06260926-ST",
+      "shortName": "ST",
+      "headsign": "ST - Union Station GO"
+    }
+  ],
+  "MJ": [
+    {
+      "routeId": "06260926-ST",
+      "shortName": "ST",
+      "headsign": "ST - Union Station GO"
+    }
+  ],
+  "DA": [
+    {
+      "routeId": "06260926-LE",
+      "shortName": "LE",
+      "headsign": "LE - Union Station GO"
+    }
+  ],
+  "SC": [
+    {
+      "routeId": "06260926-LE",
+      "shortName": "LE",
+      "headsign": "LE - Union Station GO"
+    }
+  ],
+  "EG": [
+    {
+      "routeId": "06260926-LE",
+      "shortName": "LE",
+      "headsign": "LE - Union Station GO"
+    }
+  ],
+  "GU": [
+    {
+      "routeId": "06260926-LE",
+      "shortName": "LE",
+      "headsign": "LE - Union Station GO"
+    }
+  ],
+  "RO": [
+    {
+      "routeId": "06260926-LE",
+      "shortName": "LE",
+      "headsign": "LE - Union Station GO"
+    }
+  ],
+  "PIN": [
+    {
+      "routeId": "06260926-LE",
+      "shortName": "LE",
+      "headsign": "LE - Union Station GO"
+    }
+  ],
+  "AJ": [
+    {
+      "routeId": "06260926-LE",
+      "shortName": "LE",
+      "headsign": "LE - Union Station GO"
+    }
+  ],
+  "WH": [
+    {
+      "routeId": "06260926-LE",
+      "shortName": "LE",
+      "headsign": "LE - Union Station GO"
+    }
+  ],
+  "OS": [
+    {
+      "routeId": "06260926-LE",
+      "shortName": "LE",
+      "headsign": "LE - Union Station GO"
+    }
+  ],
+  "EX": [
+    {
+      "routeId": "06260926-LW",
+      "shortName": "LW",
+      "headsign": "LW - Union Station GO"
+    }
+  ],
+  "MI": [
+    {
+      "routeId": "06260926-LW",
+      "shortName": "LW",
+      "headsign": "LW - Union Station GO"
+    }
+  ],
+  "LO": [
+    {
+      "routeId": "06260926-LW",
+      "shortName": "LW",
+      "headsign": "LW - Union Station GO"
+    }
+  ],
+  "PO": [
+    {
+      "routeId": "06260926-LW",
+      "shortName": "LW",
+      "headsign": "LW - Union Station GO"
+    }
+  ],
+  "CL": [
+    {
+      "routeId": "06260926-LW",
+      "shortName": "LW",
+      "headsign": "LW - Union Station GO"
+    }
+  ],
+  "OA": [
+    {
+      "routeId": "06260926-LW",
+      "shortName": "LW",
+      "headsign": "LW - Union Station GO"
+    }
+  ],
+  "BO": [
+    {
+      "routeId": "06260926-LW",
+      "shortName": "LW",
+      "headsign": "LW - Union Station GO"
+    }
+  ],
+  "AP": [
+    {
+      "routeId": "06260926-LW",
+      "shortName": "LW",
+      "headsign": "LW - Union Station GO"
+    }
+  ],
+  "BU": [
+    {
+      "routeId": "06260926-LW",
+      "shortName": "LW",
+      "headsign": "LW - Union Station GO"
+    }
+  ],
+  "AL": [
+    {
+      "routeId": "06260926-LW",
+      "shortName": "LW",
+      "headsign": "LW - Union Station GO"
+    }
+  ],
+  "WR": [
+    {
+      "routeId": "06260926-LW",
+      "shortName": "LW",
+      "headsign": "LW - Union Station GO"
+    }
+  ],
+  "BL": [
+    {
+      "routeId": "06260926-GT",
+      "shortName": "KI",
+      "headsign": "KI - Union Station GO"
+    }
+  ],
+  "MD": [
+    {
+      "routeId": "06260926-GT",
+      "shortName": "KI",
+      "headsign": "KI - Union Station GO"
+    }
+  ],
+  "WE": [
+    {
+      "routeId": "06260926-GT",
+      "shortName": "KI",
+      "headsign": "KI - Union Station GO"
+    }
+  ],
+  "ET": [
+    {
+      "routeId": "06260926-GT",
+      "shortName": "KI",
+      "headsign": "KI - Union Station GO"
+    }
+  ],
+  "MA": [
+    {
+      "routeId": "06260926-GT",
+      "shortName": "KI",
+      "headsign": "KI - Union Station GO"
+    }
+  ],
+  "BE": [
+    {
+      "routeId": "06260926-GT",
+      "shortName": "KI",
+      "headsign": "KI - Union Station GO"
+    }
+  ],
+  "BR": [
+    {
+      "routeId": "06260926-GT",
+      "shortName": "KI",
+      "headsign": "KI - Union Station GO"
+    }
+  ],
+  "MO": [
+    {
+      "routeId": "06260926-GT",
+      "shortName": "KI",
+      "headsign": "KI - Union Station GO"
+    }
+  ],
+  "GE": [
+    {
+      "routeId": "06260926-GT",
+      "shortName": "KI",
+      "headsign": "KI - Union Station GO"
+    }
+  ],
+  "ML": [
+    {
+      "routeId": "06260926-MI",
+      "shortName": "MI",
+      "headsign": "MI - Milton GO"
+    }
+  ],
+  "LS": [
+    {
+      "routeId": "06260926-MI",
+      "shortName": "MI",
+      "headsign": "MI - Milton GO"
+    }
+  ],
+  "ME": [
+    {
+      "routeId": "06260926-MI",
+      "shortName": "MI",
+      "headsign": "MI - Milton GO"
+    }
+  ],
+  "SR": [
+    {
+      "routeId": "06260926-MI",
+      "shortName": "MI",
+      "headsign": "MI - Milton GO"
+    }
+  ],
+  "ER": [
+    {
+      "routeId": "06260926-MI",
+      "shortName": "MI",
+      "headsign": "MI - Milton GO"
+    }
+  ],
+  "CO": [
+    {
+      "routeId": "06260926-MI",
+      "shortName": "MI",
+      "headsign": "MI - Milton GO"
+    }
+  ],
+  "DI": [
+    {
+      "routeId": "06260926-MI",
+      "shortName": "MI",
+      "headsign": "MI - Milton GO"
+    }
+  ],
+  "KP": [
+    {
+      "routeId": "06260926-MI",
+      "shortName": "MI",
+      "headsign": "MI - Milton GO"
+    }
+  ],
+  "DW": [
+    {
+      "routeId": "06260926-BR",
+      "shortName": "BR",
+      "headsign": "BR - Union Station GO"
+    }
+  ],
+  "RU": [
+    {
+      "routeId": "06260926-BR",
+      "shortName": "BR",
+      "headsign": "BR - Union Station GO"
+    }
+  ],
+  "MP": [
+    {
+      "routeId": "06260926-BR",
+      "shortName": "BR",
+      "headsign": "BR - Union Station GO"
+    }
+  ],
+  "KC": [
+    {
+      "routeId": "06260926-BR",
+      "shortName": "BR",
+      "headsign": "BR - Union Station GO"
+    }
+  ],
+  "AU": [
+    {
+      "routeId": "06260926-BR",
+      "shortName": "BR",
+      "headsign": "BR - Union Station GO"
+    }
+  ],
+  "AC": [
+    {
+      "routeId": "06260926-GT",
+      "shortName": "KI",
+      "headsign": "KI - Union Station GO"
+    }
+  ],
+  "GL": [
+    {
+      "routeId": "06260926-GT",
+      "shortName": "KI",
+      "headsign": "KI - Union Station GO"
+    }
+  ],
+  "KI": [
+    {
+      "routeId": "06260926-GT",
+      "shortName": "KI",
+      "headsign": "KI - Union Station GO"
+    }
+  ],
+  "OR": [
+    {
+      "routeId": "06260926-RH",
+      "shortName": "RH",
+      "headsign": "RH - Union Station GO"
+    }
+  ],
+  "OL": [
+    {
+      "routeId": "06260926-RH",
+      "shortName": "RH",
+      "headsign": "RH - Union Station GO"
+    }
+  ],
+  "LA": [
+    {
+      "routeId": "06260926-RH",
+      "shortName": "RH",
+      "headsign": "RH - Union Station GO"
+    }
+  ],
+  "RI": [
+    {
+      "routeId": "06260926-RH",
+      "shortName": "RH",
+      "headsign": "RH - Union Station GO"
+    }
+  ],
+  "GO": [
+    {
+      "routeId": "06260926-RH",
+      "shortName": "RH",
+      "headsign": "RH - Union Station GO"
+    }
+  ],
+  "BM": [
+    {
+      "routeId": "06260926-RH",
+      "shortName": "RH",
+      "headsign": "RH - Union Station GO"
+    }
+  ],
+  "NE": [
+    {
+      "routeId": "06260926-BR",
+      "shortName": "BR",
+      "headsign": "BR - Union Station GO"
+    }
+  ],
+  "EA": [
+    {
+      "routeId": "06260926-BR",
+      "shortName": "BR",
+      "headsign": "BR - Union Station GO"
+    }
+  ],
+  "BD": [
+    {
+      "routeId": "06260926-BR",
+      "shortName": "BR",
+      "headsign": "BR - Union Station GO"
+    }
+  ],
+  "BA": [
+    {
+      "routeId": "06260926-BR",
+      "shortName": "BR",
+      "headsign": "BR - Union Station GO"
+    }
+  ],
+  "AD": [
+    {
+      "routeId": "06260926-BR",
+      "shortName": "BR",
+      "headsign": "BR - Union Station GO"
+    }
+  ],
+  "CF": [
+    {
+      "routeId": "06260926-LW",
+      "shortName": "LW",
+      "headsign": "LW - Confederation GO"
+    }
+  ],
+  "SCTH": [
+    {
+      "routeId": "06260926-LW",
+      "shortName": "LW",
+      "headsign": "LW - Union Station GO"
+    }
+  ],
+  "NI": [
+    {
+      "routeId": "06260926-LW",
+      "shortName": "LW",
+      "headsign": "LW - Union Station GO"
+    }
+  ],
+  "LI": [
+    {
+      "routeId": "06260926-ST",
+      "shortName": "ST",
+      "headsign": "ST - Old Elm GO"
+    }
+  ],
+  "ST": [
+    {
+      "routeId": "06260926-ST",
+      "shortName": "ST",
+      "headsign": "ST - Old Elm GO"
+    }
+  ],
+  "HA": [
+    {
+      "routeId": "06260926-LW",
+      "shortName": "LW",
+      "headsign": "LW - Union Station GO"
+    }
+  ]
+}

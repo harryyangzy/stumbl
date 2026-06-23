@@ -83,12 +83,7 @@ export async function refreshWidgetTimeline(
         at.getTime(),
         matchStopIds
       );
-      const nextScheduled = staticGtfs.getScheduledArrivalsAfter(
-        commute.stopId,
-        commute.routeId,
-        at,
-        8
-      );
+      const nextScheduled = await staticGtfs.getScheduledArrivalsForCommute(commute, at, 8);
       const state = computeCountdownState({
         commute,
         now: at,

@@ -1,0 +1,8 @@
+route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color
+06260926-ST,GO,ST,Stouffville,2,794500,FFFFFF
+06260926-RH,GO,RH,Richmond Hill,2,0099c7,FFFFFF
+06260926-MI,GO,MI,Milton,2,f57f25,FFFFFF
+06260926-LW,GO,LW,Lakeshore West,2,98002e,FFFFFF
+06260926-LE,GO,LE,Lakeshore East,2,ff0d00,FFFFFF
+06260926-GT,GO,KI,Kitchener,2,00853e,FFFFFF
+06260926-BR,GO,BR,Barrie,2,003767,FFFFFF

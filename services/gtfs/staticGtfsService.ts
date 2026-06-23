@@ -14,8 +14,16 @@ import {
   type TransitAgencyConfig,
   type TransitAgencyId,
 } from '@/lib/transitAgencies';
+import type { SavedCommute } from '@/types/commute';
 import type { GtfsRoute, GtfsStop, GtfsStopTime, GtfsTrip } from '@/types/gtfs';
+import { fetchGoScheduledArrivalsAfter } from '@/services/go/goApiService';
 
+import goCalendarDatesTxt from '../../data/gtfs/go/calendar_dates.txt';
+import goRoutesTxt from '../../data/gtfs/go/routes.txt';
+import goStopRoutesJson from '../../data/gtfs/go/stop_routes.json';
+import goStopTimesTxt from '../../data/gtfs/go/stop_times.txt';
+import goStopsTxt from '../../data/gtfs/go/stops.txt';
+import goTripsTxt from '../../data/gtfs/go/trips.txt';
 import ltcCalendarDatesTxt from '../../data/gtfs/ltc/calendar_dates.txt';
 import ltcCalendarTxt from '../../data/gtfs/ltc/calendar.txt';
 import ltcRoutesTxt from '../../data/gtfs/ltc/routes.txt';
@@ -53,7 +61,17 @@ const GTFS_BUNDLES: Record<TransitAgencyId, GtfsBundleModules> = {
     stopTimes: grtStopTimesTxt,
     calendarDates: grtCalendarDatesTxt,
   },
+  go: {
+    stops: goStopsTxt,
+    routes: goRoutesTxt,
+    trips: goTripsTxt,
+    stopTimes: goStopTimesTxt,
+    calendarDates: goCalendarDatesTxt,
+  },
 };
+
+type GoStopRouteRow = { routeId: string; shortName: string; headsign: string };
+const GO_STOP_ROUTES = goStopRoutesJson as Record<string, GoStopRouteRow[]>;
 
 type CalendarRow = {
   serviceId: string;
@@ -396,6 +414,20 @@ export class StaticGtfsService {
   }
 
   routesServingStop(stopId: string): { route: GtfsRoute; headsign: string }[] {
+    if (this.agencyId === 'go') {
+      const rows = GO_STOP_ROUTES[stopId] ?? [];
+      return rows
+        .map((row) => {
+          const route = this.routes.get(row.routeId);
+          if (!route) return null;
+          return { route, headsign: row.headsign };
+        })
+        .filter((x): x is { route: GtfsRoute; headsign: string } => x !== null)
+        .sort((a, b) =>
+          a.route.shortName.localeCompare(b.route.shortName, undefined, { numeric: true })
+        );
+    }
+
     const times = this.stopTimesAtStop.get(stopId) ?? [];
     const seen = new Map<string, { route: GtfsRoute; headsign: string }>();
     for (const st of times) {
@@ -429,6 +461,17 @@ export class StaticGtfsService {
 
   ionStopIdsByStationKey(): Map<string, Set<string>> {
     return this.ionStopIdsByKey;
+  }
+
+  async getScheduledArrivalsForCommute(
+    commute: SavedCommute,
+    after: Date,
+    count = 4
+  ): Promise<Date[]> {
+    if (this.agency.metrolinxApi) {
+      return fetchGoScheduledArrivalsAfter(commute, after, count);
+    }
+    return this.getScheduledArrivalsAfter(commute.stopId, commute.routeId, after, count);
   }
 
   getScheduledArrivalsAfter(stopId: string, routeId: string, after: Date, count = 4): Date[] {

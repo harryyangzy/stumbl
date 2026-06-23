@@ -1,4 +1,4 @@
-export type TransitAgencyId = 'ltc' | 'grt';
+export type TransitAgencyId = 'ltc' | 'grt' | 'go';
 
 export type TransitAgencyConfig = {
   id: TransitAgencyId;
@@ -9,6 +9,8 @@ export type TransitAgencyConfig = {
   dedupeStopsByName: boolean;
   excludeParentStations: boolean;
   ionSupport: boolean;
+  /** Uses Metrolinx Open Data API (requires EXPO_PUBLIC_METROLINX_API_KEY). */
+  metrolinxApi: boolean;
   realtime: {
     tripUpdates: readonly string[];
   };
@@ -23,6 +25,7 @@ export const TRANSIT_AGENCIES: Record<TransitAgencyId, TransitAgencyConfig> = {
     dedupeStopsByName: false,
     excludeParentStations: false,
     ionSupport: false,
+    metrolinxApi: false,
     realtime: {
       tripUpdates: ['http://gtfs.ltconline.ca/TripUpdate/TripUpdates.pb'],
     },
@@ -35,11 +38,25 @@ export const TRANSIT_AGENCIES: Record<TransitAgencyId, TransitAgencyConfig> = {
     dedupeStopsByName: true,
     excludeParentStations: true,
     ionSupport: true,
+    metrolinxApi: false,
     realtime: {
       tripUpdates: [
         'https://webapps.regionofwaterloo.ca/api/grt-routes/api/tripupdates/1',
         'https://webapps.regionofwaterloo.ca/api/grt-routes/api/tripupdates/2',
       ],
+    },
+  },
+  go: {
+    id: 'go',
+    label: 'GO Transit',
+    region: 'Greater Golden Horseshoe',
+    calendarMode: 'calendar_dates_only',
+    dedupeStopsByName: true,
+    excludeParentStations: false,
+    ionSupport: false,
+    metrolinxApi: true,
+    realtime: {
+      tripUpdates: [],
     },
   },
 };

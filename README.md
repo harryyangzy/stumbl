@@ -1,6 +1,8 @@
 # Stumbl
 
-iOS-focused Expo app that helps you leave for the bus on time: pick a Grand River Transit (GRT) stop in Waterloo Region, a route, walking time, and buffer, then track a single commute via a home screen widget.
+iOS-focused Expo app that helps you leave for the bus or train on time: pick a stop, a route, walking time, and buffer, then track a single commute via a home screen widget.
+
+Supported agencies: **Grand River Transit** (Waterloo Region), **London Transit**, and **GO Transit** (Greater Golden Horseshoe).
 
 ## Requirements
 
@@ -56,9 +58,20 @@ npm run ios
 ## Configuration
 
 - **`app.config.ts`** — app name, iOS bundle id (`ca.stumbl.app`), `expo-router`; **`expo-widgets` plugin is omitted when `EXPO_NO_WIDGETS=1`** (default `npm start`).
-- **`lib/transitAgencies.ts`** — London Transit (LTC) and Grand River Transit (GRT) configs, GTFS bundles, and realtime URLs.
+- **`lib/transitAgencies.ts`** — London Transit (LTC), Grand River Transit (GRT), and GO Transit configs, GTFS bundles, and realtime URLs.
 - **`lib/config.ts`** — re-exports shared realtime timing flags from `transitAgencies.ts`.
-- **`metro.config.js`** — bundles `.txt` GTFS files from `data/google_transit/`.
+- **`metro.config.js`** — bundles `.txt` GTFS files from `data/gtfs/`.
+
+### GO Transit API key
+
+GO schedules and live arrivals use the [Metrolinx Open Data API](https://opendata.metrolinx.com/). Copy `.env.example` to `.env` and set your subscription key:
+
+```bash
+cp .env.example .env
+# edit .env — EXPO_PUBLIC_METROLINX_API_KEY=your_key
+```
+
+Restart Metro after changing `.env`. Without a key, GO stop search still works from bundled static data, but countdowns fall back to unavailable.
 
 ## Architecture (high level)
 
@@ -68,22 +81,23 @@ npm run ios
 | Onboarding flow | `app/(onboarding)/` |
 | Post-setup home | `app/(onboarding)/summary.tsx` (widget preview + edit slideover) |
 | Domain | `services/countdown/countdownService.ts` |
-| Static GTFS | `services/gtfs/staticGtfsService.ts` + `data/gtfs/{ltc,grt}/*.txt` |
-| Realtime GTFS-RT JSON | `services/realtime/realtimeGtfsService.ts` |
+| Static GTFS | `services/gtfs/staticGtfsService.ts` + `data/gtfs/{ltc,grt,go}/*` |
+| Realtime GTFS-RT / Metrolinx API | `services/realtime/realtimeGtfsService.ts`, `services/go/goApiService.ts` |
 | Widget mapping | `services/widget/widgetViewModel.ts` |
 | Persistence | `store/commuteStore.ts` (Zustand + AsyncStorage) |
 | iOS widget UI | `features/widget/StumblWidget.tsx` (`expo-widgets` + `@expo/ui` Swift UI) |
 
-Swap **static** feeds by replacing files under `data/gtfs/ltc/` or `data/gtfs/grt/`. Swap **realtime** in `lib/transitAgencies.ts`.
+Swap **static** feeds by replacing files under `data/gtfs/ltc/`, `data/gtfs/grt/`, or `data/gtfs/go/`. Swap **realtime** in `lib/transitAgencies.ts` (LTC/GRT) or via the Metrolinx API key (GO).
 
 ## Supported cities
 
-On first launch, pick **London Transit** or **Grand River Transit (Waterloo Region)** on the welcome screen. That choice drives stop search, routes, schedules, and live arrivals for the saved commute.
+On first launch, pick **London Transit**, **Grand River Transit (Waterloo Region)**, or **GO Transit** on the welcome screen. That choice drives stop search, routes, schedules, and live arrivals for the saved commute.
 
 | Agency | Static GTFS | Realtime |
 | --- | --- | --- |
 | London Transit (LTC) | `data/gtfs/ltc/` | `http://gtfs.ltconline.ca/TripUpdate/TripUpdates.pb` |
 | Grand River Transit (GRT) | `data/gtfs/grt/` | GRT bus + ION HTTPS feeds (merged) |
+| GO Transit | `data/gtfs/go/` (rail stops/routes only) | Metrolinx GTFS-RT TripUpdates + `Stop/NextService` fallback |
 
 ## Realtime endpoints
 
@@ -119,7 +133,7 @@ Set `USE_MOCK_REALTIME` to `false` in `lib/config.ts` to use the live trip-updat
 
 ## Static GTFS note
 
-Bundled feeds live in `data/gtfs/ltc/` (London) and `data/gtfs/grt/` (Waterloo Region). Refresh them from each agency’s open-data page when schedules change. GRT uses `calendar_dates` only; LTC uses `calendar.txt` plus `calendar_dates` exceptions.
+Bundled feeds live in `data/gtfs/ltc/` (London), `data/gtfs/grt/` (Waterloo Region), and `data/gtfs/go/` (GO rail corridors). Refresh them from each agency’s open-data page when schedules change. GRT and GO use `calendar_dates` only; LTC uses `calendar.txt` plus `calendar_dates` exceptions. GO’s bundle omits full `stop_times.txt` (schedules come from the Metrolinx API).
 
 Extra files in `data/` (`GRT_Stops.csv`, `ION_Stops.csv`, sample `TripUpdates.pb`) are reference downloads and are **not** read by the app.
 

@@ -88,12 +88,7 @@ export default function SummaryScreen() {
           now.getTime(),
           matchStopIds
         );
-        const nextScheduled = staticGtfs.getScheduledArrivalsAfter(
-          c.stopId,
-          c.routeId,
-          now,
-          8
-        );
+        const nextScheduled = await staticGtfs.getScheduledArrivalsForCommute(c, now, 8);
         const mapsUrl = buildGoogleMapsCoordinateUrl(c.stopLat, c.stopLon);
         const state = computeCountdownState({
           commute: c,

@@ -3,6 +3,10 @@ import GtfsRealtimeBindings from 'gtfs-realtime-bindings';
 import { USE_MOCK_REALTIME, REALTIME_FETCH_TIMEOUT_MS } from '@/lib/config';
 import { resolveIonStopIds } from '@/lib/grtIonStopMap';
 import { getTransitAgency } from '@/lib/transitAgencies';
+import {
+  fetchGoNextServiceRealtime,
+  fetchGoTripUpdatesProtobuf,
+} from '@/services/go/goApiService';
 import { getStaticGtfsService } from '@/services/gtfs/staticGtfsService';
 import type { SavedCommute } from '@/types/commute';
 import type { ArrivalPrediction, RealtimeFetchResult } from '@/types/realtime';
@@ -191,6 +195,17 @@ export class RealtimeGtfsService {
     }
     try {
       const agency = getTransitAgency(commute.agencyId);
+      if (agency.metrolinxApi) {
+        const bytes = await fetchGoTripUpdatesProtobuf();
+        if (bytes) {
+          const parsed = parseTripUpdatesProtobuf(bytes);
+          if (parsed.predictions.length > 0) return parsed;
+        }
+        return fetchGoNextServiceRealtime(commute, now);
+      }
+      if (agency.realtime.tripUpdates.length === 0) {
+        return { predictions: [], feedTimestampSec: null, source: 'unavailable' };
+      }
       return await fetchTripUpdatesFromEndpoints(agency.realtime.tripUpdates);
     } catch {
       return { predictions: [], feedTimestampSec: null, source: 'unavailable' };
@@ -203,8 +218,14 @@ export class RealtimeGtfsService {
     nowMs: number = Date.now(),
     matchStopIds: Set<string> = new Set([commute.stopId])
   ): ArrivalPrediction[] {
+    const agency = getTransitAgency(commute.agencyId);
     return result.predictions
-      .filter((p) => matchStopIds.has(p.stopId) && p.routeId === commute.routeId)
+      .filter((p) => {
+        if (!matchStopIds.has(p.stopId)) return false;
+        if (p.routeId === commute.routeId) return true;
+        if (agency.metrolinxApi && p.routeId === commute.routeShortName) return true;
+        return false;
+      })
       .filter((p) => p.arrivalTimeSec * 1000 > nowMs - 60 * 1000)
       .sort((a, b) => a.arrivalTimeSec - b.arrivalTimeSec);
   }
