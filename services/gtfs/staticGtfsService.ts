@@ -188,6 +188,8 @@ export class StaticGtfsService {
   private calendarExceptions: CalendarException[] = [];
   private calendarDatesOnlyByYmd = new Map<string, Set<string>>();
   private ionStopIdsByKey = new Map<string, Set<string>>();
+  /** GRT (and GO) platform variants that share a display name. */
+  private stopIdsByNameKey = new Map<string, Set<string>>();
 
   constructor(agencyId: TransitAgencyId) {
     this.agencyId = agencyId;
@@ -195,13 +197,27 @@ export class StaticGtfsService {
   }
 
   private dedupeStopsByName(stops: GtfsStop[]): GtfsStop[] {
-    const seen = new Set<string>();
-    const out: GtfsStop[] = [];
+    const byKey = new Map<string, GtfsStop[]>();
     for (const stop of stops) {
       const key = normalizeMatchWords(stop.stopName);
-      if (!key || seen.has(key)) continue;
-      seen.add(key);
-      out.push(stop);
+      if (!key) continue;
+      const list = byKey.get(key) ?? [];
+      list.push(stop);
+      byKey.set(key, list);
+    }
+
+    const out: GtfsStop[] = [];
+    for (const group of byKey.values()) {
+      if (group.length === 1) {
+        out.push(group[0]);
+        continue;
+      }
+      group.sort((a, b) => {
+        const aCount = this.stopTimesAtStop.get(a.stopId)?.length ?? 0;
+        const bCount = this.stopTimesAtStop.get(b.stopId)?.length ?? 0;
+        return bCount - aCount || a.stopId.localeCompare(b.stopId);
+      });
+      out.push(group[0]);
     }
     return out;
   }
@@ -314,6 +330,17 @@ export class StaticGtfsService {
       const atStop = this.stopTimesAtStop.get(st.stopId) ?? [];
       atStop.push(st);
       this.stopTimesAtStop.set(st.stopId, atStop);
+    }
+
+    if (this.agency.dedupeStopsByName) {
+      this.stopIdsByNameKey = new Map();
+      for (const stop of this.stops) {
+        const key = normalizeMatchWords(stop.stopName);
+        if (!key) continue;
+        const set = this.stopIdsByNameKey.get(key) ?? new Set<string>();
+        set.add(stop.stopId);
+        this.stopIdsByNameKey.set(key, set);
+      }
     }
 
     if (this.agency.calendarMode === 'calendar_dates_only') {
@@ -430,13 +457,15 @@ export class StaticGtfsService {
 
     const times = this.stopTimesAtStop.get(stopId) ?? [];
     const seen = new Map<string, { route: GtfsRoute; headsign: string }>();
-    for (const st of times) {
-      const trip = this.trips.get(st.tripId);
-      if (!trip) continue;
-      const route = this.routes.get(trip.routeId);
-      if (!route) continue;
-      if (!seen.has(trip.routeId)) {
-        seen.set(trip.routeId, { route, headsign: trip.headsign });
+    for (const sid of this.resolvePlatformStopIds(stopId)) {
+      for (const st of this.stopTimesAtStop.get(sid) ?? []) {
+        const trip = this.trips.get(st.tripId);
+        if (!trip) continue;
+        const route = this.routes.get(trip.routeId);
+        if (!route) continue;
+        if (!seen.has(trip.routeId)) {
+          seen.set(trip.routeId, { route, headsign: trip.headsign });
+        }
       }
     }
 
@@ -463,6 +492,17 @@ export class StaticGtfsService {
     return this.ionStopIdsByKey;
   }
 
+  /** All GTFS stop IDs for the same platform group (e.g. GRT bay variants). */
+  resolvePlatformStopIds(stopId: string, stopName?: string): Set<string> {
+    if (!this.agency.dedupeStopsByName) return new Set([stopId]);
+    const stop = this.getStop(stopId);
+    const key = normalizeMatchWords(stopName ?? stop?.stopName ?? '');
+    if (!key) return new Set([stopId]);
+    const ids = this.stopIdsByNameKey.get(key);
+    if (!ids?.size) return new Set([stopId]);
+    return new Set(ids);
+  }
+
   async getScheduledArrivalsForCommute(
     commute: SavedCommute,
     after: Date,
@@ -485,10 +525,12 @@ export class StaticGtfsService {
     serviceDayStart.setHours(0, 0, 0, 0);
 
     const candidates: Date[] = [];
-    for (const st of this.stopTimesAtStop.get(stopId) ?? []) {
-      if (!tripIds.has(st.tripId)) continue;
-      const dt = gtfsClockToDate(serviceDayStart, st.arrivalTime);
-      if (dt.getTime() > after.getTime()) candidates.push(dt);
+    for (const sid of this.resolvePlatformStopIds(stopId)) {
+      for (const st of this.stopTimesAtStop.get(sid) ?? []) {
+        if (!tripIds.has(st.tripId)) continue;
+        const dt = gtfsClockToDate(serviceDayStart, st.arrivalTime);
+        if (dt.getTime() > after.getTime()) candidates.push(dt);
+      }
     }
 
     candidates.sort((a, b) => a.getTime() - b.getTime());
@@ -501,9 +543,11 @@ export class StaticGtfsService {
       const nextTripIds = new Set(
         tripsForRoute.filter((t) => nextServiceIds.has(t.serviceId)).map((t) => t.tripId)
       );
-      for (const st of this.stopTimesAtStop.get(stopId) ?? []) {
-        if (!nextTripIds.has(st.tripId)) continue;
-        candidates.push(gtfsClockToDate(nextDayStart, st.arrivalTime));
+      for (const sid of this.resolvePlatformStopIds(stopId)) {
+        for (const st of this.stopTimesAtStop.get(sid) ?? []) {
+          if (!nextTripIds.has(st.tripId)) continue;
+          candidates.push(gtfsClockToDate(nextDayStart, st.arrivalTime));
+        }
       }
       candidates.sort((a, b) => a.getTime() - b.getTime());
     }

@@ -177,15 +177,18 @@ export function mockRealtimeForCommute(commute: SavedCommute, now: Date): Realti
 
 export async function matchStopIdsForCommute(commute: SavedCommute): Promise<Set<string>> {
   const agency = getTransitAgency(commute.agencyId);
-  if (!agency.ionSupport) {
-    return new Set([commute.stopId]);
-  }
   const staticGtfs = await getStaticGtfsService(commute.agencyId);
-  return resolveIonStopIds({
+  const ids = staticGtfs.resolvePlatformStopIds(commute.stopId, commute.stopName);
+  if (!agency.ionSupport) {
+    return ids;
+  }
+  const ionIds = resolveIonStopIds({
     stopId: commute.stopId,
     stopName: commute.stopName,
     staticStopIdsByIonKey: staticGtfs.ionStopIdsByStationKey(),
   });
+  for (const id of ionIds) ids.add(id);
+  return ids;
 }
 
 export class RealtimeGtfsService {
