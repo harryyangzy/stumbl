@@ -91,7 +91,7 @@ Swap **static** feeds by replacing files under `data/gtfs/ltc/`, `data/gtfs/grt/
 
 ## Supported cities
 
-On first launch, pick **London Transit**, **Grand River Transit (Waterloo Region)**, or **GO Transit** on the welcome screen. That choice drives stop search, routes, schedules, and live arrivals for the saved commute.
+On first launch, tap **Get Started**, then pick **London Transit**, **Grand River Transit (Waterloo Region)**, or **GO Transit** on the city screen. That choice drives stop search, routes, schedules, and live arrivals for the saved commute.
 
 | Agency | Static GTFS | Realtime |
 | --- | --- | --- |

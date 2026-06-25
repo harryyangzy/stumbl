@@ -193,7 +193,7 @@ export default function StopScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.screenBody}>
-        <OnboardingProgressBar step={1} />
+        <OnboardingProgressBar step={2} />
         <View style={styles.main}>
           <ScrollView
             style={styles.scrollArea}

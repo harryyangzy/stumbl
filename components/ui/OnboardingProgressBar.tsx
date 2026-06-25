@@ -2,8 +2,8 @@ import { StyleSheet, View } from 'react-native';
 
 import { theme } from '@/lib/theme';
 
-/** stop → line → walking → buffer */
-export const ONBOARDING_TOTAL_STEPS = 4;
+/** city → stop → line → walking → buffer */
+export const ONBOARDING_TOTAL_STEPS = 5;
 
 type Props = {
   /** 1-based step in the onboarding flow. */

@@ -93,7 +93,7 @@ export default function LineScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.missOuter}>
-          <OnboardingProgressBar step={2} />
+          <OnboardingProgressBar step={3} />
           <View style={styles.missWrap}>
             <Text style={styles.miss}>Select a stop first.</Text>
             <PrimaryButton title="Back" onPress={() => router.back()} />
@@ -106,7 +106,7 @@ export default function LineScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.screenBody}>
-        <OnboardingProgressBar step={2} />
+        <OnboardingProgressBar step={3} />
         <View style={styles.main}>
           <ScrollView
             style={styles.scrollArea}

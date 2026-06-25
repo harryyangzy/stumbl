@@ -42,7 +42,7 @@ export default function BufferScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.screenBody}>
-        <OnboardingProgressBar step={4} />
+        <OnboardingProgressBar step={5} />
         <View style={styles.main}>
           <ScrollView
             style={styles.scrollArea}

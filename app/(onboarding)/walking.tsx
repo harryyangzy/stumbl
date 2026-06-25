@@ -42,7 +42,7 @@ export default function WalkingScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.screenBody}>
-        <OnboardingProgressBar step={3} />
+        <OnboardingProgressBar step={4} />
         <View style={styles.main}>
           <ScrollView
             style={styles.scrollArea}
