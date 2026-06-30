@@ -11,7 +11,10 @@
     "prebuild": "expo prebuild --platform ios --clean && npm run sync:icons",
     "lint": "eslint \"**/*.{js,jsx,ts,tsx}\" && prettier -c \"**/*.{js,jsx,ts,tsx,json}\"",
     "format": "eslint \"**/*.{js,jsx,ts,tsx}\" --fix && prettier \"**/*.{js,jsx,ts,tsx,json}\" --write",
-    "android": "expo run:android"
+    "android": "expo run:android",
+    "build:ios": "eas build --platform ios --profile production",
+    "submit:ios": "eas submit --platform ios --profile production",
+    "deploy:ios": "eas build --platform ios --profile production --auto-submit"
   },
   "dependencies": {
     "@expo/ui": "~55.0.17",
