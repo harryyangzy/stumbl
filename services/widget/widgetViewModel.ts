@@ -1,3 +1,4 @@
+import { GTFS_TIMEZONE } from '@/lib/config';
 import type { CountdownState } from '@/services/countdown/countdownService';
 
 export type WidgetDisplayProps = {
@@ -45,12 +46,64 @@ export function getWidgetPrimaryUnitLabel(props: Partial<WidgetDisplayProps>) {
   return Number(props.primaryValue) === 1 ? 'minute' : 'minutes';
 }
 
+export function formatNextScheduledFooter(
+  arrivalSec: number | undefined,
+  now = new Date()
+): { title: string; subtitle: string } {
+  if (arrivalSec == null || arrivalSec <= 0) {
+    return { title: '', subtitle: '' };
+  }
+
+  const title = 'Next bus';
+  if (arrivalSec < 60) {
+    return {
+      title,
+      subtitle: `in ${arrivalSec} ${arrivalSec === 1 ? 'second' : 'seconds'}`,
+    };
+  }
+
+  if (arrivalSec < 3 * 60 * 60) {
+    const mins = Math.ceil(arrivalSec / 60);
+    return {
+      title,
+      subtitle: `in ${mins} ${mins === 1 ? 'minute' : 'minutes'}`,
+    };
+  }
+
+  const arrival = new Date(now.getTime() + arrivalSec * 1000);
+  const time = arrival.toLocaleTimeString('en-US', {
+    timeZone: GTFS_TIMEZONE,
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+  const today = now.toLocaleDateString('en-CA', { timeZone: GTFS_TIMEZONE });
+  const arrivalDay = arrival.toLocaleDateString('en-CA', { timeZone: GTFS_TIMEZONE });
+  if (arrivalDay !== today) {
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowKey = tomorrow.toLocaleDateString('en-CA', { timeZone: GTFS_TIMEZONE });
+    if (arrivalDay === tomorrowKey) {
+      return { title, subtitle: `tomorrow at ${time}` };
+    }
+    const date = arrival.toLocaleDateString('en-US', {
+      timeZone: GTFS_TIMEZONE,
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    });
+    return { title, subtitle: `${date} at ${time}` };
+  }
+
+  return { title, subtitle: `at ${time}` };
+}
+
+/** @deprecated Prefer formatNextScheduledFooter for the no-buses state. */
 export function formatWidgetFooterLabel(params: {
   busArrivalSec?: number;
   state: WidgetDisplayProps['state'];
 }): string {
   const { busArrivalSec, state } = params;
-  if (state === 'fallback') return 'No buses right now';
+  if (state === 'fallback') return '';
   if (state === 'empty') return '';
   if (busArrivalSec == null) return '';
   if (busArrivalSec < 60) {
@@ -156,19 +209,19 @@ export function countdownToWidgetProps(state: CountdownState): WidgetDisplayProp
         state: 'empty',
         mapsUrl: '',
       };
-    case 'no_realtime':
+    case 'no_realtime': {
+      const footer = formatNextScheduledFooter(state.nextScheduledArrivalSec);
       return {
-        primaryValue: '—',
-        unitLabel: 'No buses right now',
+        primaryValue: '00',
+        unitLabel: 'no buses',
         routeBadge: badge,
         headsign: head,
-        footerTitle: '',
-        footerLabel: formatWidgetFooterLabel({
-          state: 'fallback',
-        }),
+        footerTitle: footer.title,
+        footerLabel: footer.subtitle,
         state: 'fallback',
         mapsUrl: state.mapsUrl,
       };
+    }
     case 'leave_now': {
       /**
        * Reached only when every known bus is already past its leave time (e.g.

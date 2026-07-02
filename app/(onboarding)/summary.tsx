@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { ActionSheetIOS, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { USE_SCHEDULE_FALLBACK } from '@/lib/config';
 import { EditWidgetSheet, type EditSheetLine } from '@/components/ui/EditWidgetSheet';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { WidgetPreviewCard } from '@/components/ui/WidgetPreviewCard';
@@ -89,9 +88,7 @@ export default function SummaryScreen() {
           now.getTime(),
           matchStopIds
         );
-        const nextScheduled = USE_SCHEDULE_FALLBACK
-          ? await staticGtfs.getScheduledArrivalsForCommute(c, now, 8)
-          : [];
+        const nextScheduled = await staticGtfs.getScheduledArrivalsForCommute(c, now, 8);
         const mapsUrl = buildGoogleMapsCoordinateUrl(c.stopLat, c.stopLon);
         const state = computeCountdownState({
           commute: c,

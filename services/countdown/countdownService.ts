@@ -1,4 +1,4 @@
-import { REALTIME_STALE_AFTER_SEC } from '@/lib/config';
+import { REALTIME_STALE_AFTER_SEC, USE_SCHEDULE_FALLBACK } from '@/lib/config';
 import type { SavedCommute } from '@/types/commute';
 import type { ArrivalPrediction, RealtimeFetchResult } from '@/types/realtime';
 
@@ -34,6 +34,8 @@ export type CountdownState = {
   nextBusLeaveNow?: boolean;
   /** True when the footer "next bus" timing comes from GTFS-RT (not static schedule). */
   nextBusFromRealtime?: boolean;
+  /** Seconds until the next static-schedule departure (footer when live feed is empty). */
+  nextScheduledArrivalSec?: number;
   routeShort: string;
   headsign: string;
   mapsUrl: string;
@@ -127,7 +129,8 @@ export function computeCountdownState(params: {
 
   const preds = feedStale ? [] : predictions;
 
-  const arrivals = collectUpcomingArrivals(preds, nextScheduled, nowMs);
+  const scheduledForCountdown = USE_SCHEDULE_FALLBACK ? nextScheduled : [];
+  const arrivals = collectUpcomingArrivals(preds, scheduledForCountdown, nowMs);
   const leadMs = walkMs + bufferMs;
 
   /**
@@ -144,8 +147,14 @@ export function computeCountdownState(params: {
   const chosen = chosenIdx >= 0 ? arrivals[chosenIdx] : null;
 
   if (!chosen) {
+    const nextSched = nextScheduled[0];
+    const nextScheduledArrivalSec =
+      nextSched != null
+        ? Math.max(0, Math.ceil((nextSched.getTime() - nowMs) / 1000))
+        : undefined;
     return {
       kind: 'no_realtime',
+      nextScheduledArrivalSec,
       routeShort: commute.routeShortName,
       headsign: commute.headsign ?? commute.routeShortName,
       mapsUrl,

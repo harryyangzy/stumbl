@@ -43,13 +43,11 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
   }
 
   function getFooterTitle(p: WidgetDisplayProps) {
-    if (p.state === 'fallback') return '';
     if (p.state === 'empty') return '';
     return p.footerTitle ?? '';
   }
 
   function getFooterSubtitle(p: WidgetDisplayProps) {
-    if (p.state === 'fallback') return 'No buses right now';
     if (p.state === 'empty') return '';
     return p.footerLabel ?? '';
   }
