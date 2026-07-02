@@ -54,6 +54,28 @@ npm run ios
 | `npm run start:native` | Start Metro with real `expo-widgets` (dev client / not Expo Go) |
 | `npm run ios` | Prebuild (if needed) and run the iOS app (`expo run:ios`) |
 | `npm run prebuild` | Generate the `ios/` native project (widgets extension included) |
+| `npm run build:ios` | EAS cloud build for TestFlight (`production` profile) |
+| `npm run submit:ios` | Upload latest EAS iOS build to App Store Connect |
+
+## TestFlight (EAS)
+
+Linked Expo project: `@harryyng/stumbl` on [expo.dev](https://expo.dev).
+
+1. Log in once: `npx eas-cli login`
+2. Add GO Transit API key for production builds:
+   ```bash
+   npx eas-cli env:create --name EXPO_PUBLIC_METROLINX_API_KEY --value YOUR_KEY --environment production --visibility plaintext
+   ```
+3. Bump `version` / `ios.buildNumber` in `app.config.ts` before each upload.
+4. Build and submit:
+   ```bash
+   npm install
+   npm run build:ios
+   npm run submit:ios
+   ```
+5. In [App Store Connect](https://appstoreconnect.apple.com) → **TestFlight**, wait for processing and add testers.
+
+First build prompts for Apple Developer credentials (distribution cert + provisioning). Use `npx eas-cli` if `eas` is not on your PATH.
 
 ## Configuration
 

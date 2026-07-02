@@ -23,8 +23,11 @@ const useNativeWidgets = process.env.EXPO_NO_WIDGETS !== '1';
 const config: ExpoConfig = {
   name: 'Stumbl',
   slug: 'stumbl',
-  version: '1.0.1',
+  version: '1.0.2',
   extra: {
+    eas: {
+      projectId: 'be0812db-a18b-44a9-8271-00d6b387f5a0',
+    },
     /** Set when `EXPO_NO_WIDGETS=1` (Expo Go); `loadStumblWidget` skips `@expo/ui` SwiftUI module. */
     disableNativeWidgets: !useNativeWidgets,
     /** Metrolinx Open Data API key — set EXPO_PUBLIC_METROLINX_API_KEY in .env (see .env.example). */
@@ -45,7 +48,7 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'ca.stumbl.app',
-    buildNumber: '2',
+    buildNumber: '3',
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
       NSAppTransportSecurity: {

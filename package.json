@@ -1,6 +1,6 @@
 {
   "name": "stumbl",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "main": "expo-router/entry",
   "private": true,
   "scripts": {
@@ -9,6 +9,8 @@
     "sync:icons": "bash scripts/sync-ios-icons.sh",
     "ios": "npm run sync:icons && expo run:ios",
     "prebuild": "expo prebuild --platform ios --clean && npm run sync:icons",
+    "build:ios": "eas build --platform ios --profile production",
+    "submit:ios": "eas submit --platform ios --latest --profile production",
     "lint": "eslint \"**/*.{js,jsx,ts,tsx}\" && prettier -c \"**/*.{js,jsx,ts,tsx,json}\"",
     "format": "eslint \"**/*.{js,jsx,ts,tsx}\" --fix && prettier \"**/*.{js,jsx,ts,tsx,json}\" --write",
     "android": "expo run:android"
@@ -46,6 +48,7 @@
     "eslint": "^9.25.1",
     "eslint-config-expo": "~55.0.1",
     "eslint-config-prettier": "^10.1.2",
+    "eas-cli": "^20.5.1",
     "prettier": "^3.2.5",
     "prettier-plugin-tailwindcss": "^0.5.11",
     "tailwindcss": "^3.4.0",

@@ -1,0 +1,29 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "production": {
+      "ios": {
+        "resourceClass": "m-medium"
+      },
+      "env": {
+        "EXPO_NO_WIDGETS": "0"
+      }
+    },
+    "preview": {
+      "ios": {
+        "resourceClass": "m-medium"
+      },
+      "env": {
+        "EXPO_NO_WIDGETS": "0"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {}
+    }
+  }
+}
