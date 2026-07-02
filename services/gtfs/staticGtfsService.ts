@@ -175,6 +175,39 @@ export function gtfsClockToDate(serviceDayStart: Date, clock: string): Date {
 
 type StopSearchRow = { stop: GtfsStop; nameWords: string; nameComp: string };
 
+/** Drop the leading line code from a GO headsign, e.g. "LW - Aldershot GO" → "Aldershot GO". */
+function stripLinePrefix(headsign: string): string {
+  return headsign.replace(/^[A-Za-z0-9]+\s*-\s*/, '').trim();
+}
+
+function topCountKey(counts: Map<string, number>): string | null {
+  let best: string | null = null;
+  let bestN = -1;
+  for (const [key, n] of counts) {
+    if (n > bestN) {
+      best = key;
+      bestN = n;
+    }
+  }
+  return best;
+}
+
+/** GO route id with a direction suffix: `#0` = outbound (away from Union), `#1` = inbound (to Union). */
+export function goRouteIdWithDirection(routeId: string, directionId: '0' | '1'): string {
+  return `${routeId}#${directionId}`;
+}
+
+export function goBaseRouteId(routeId: string): string {
+  const i = routeId.indexOf('#');
+  return i === -1 ? routeId : routeId.slice(0, i);
+}
+
+export function goRouteDirection(routeId: string): 'inbound' | 'outbound' | null {
+  if (routeId.endsWith('#1')) return 'inbound';
+  if (routeId.endsWith('#0')) return 'outbound';
+  return null;
+}
+
 export class StaticGtfsService {
   readonly agencyId: TransitAgencyId;
   private agency: TransitAgencyConfig;
@@ -190,6 +223,8 @@ export class StaticGtfsService {
   private ionStopIdsByKey = new Map<string, Set<string>>();
   /** GRT (and GO) platform variants that share a display name. */
   private stopIdsByNameKey = new Map<string, Set<string>>();
+  /** GO only: per-route representative terminus for each direction (inbound = to Union). */
+  private goRouteDirections = new Map<string, { inbound: string; outbound: string }>();
 
   constructor(agencyId: TransitAgencyId) {
     this.agencyId = agencyId;
@@ -307,6 +342,7 @@ export class StaticGtfsService {
       });
     }
 
+    const goDirCounts = new Map<string, { in: Map<string, number>; out: Map<string, number> }>();
     for (const r of parseGtfsTable(tripsRaw)) {
       const trip: GtfsTrip = {
         tripId: r.trip_id,
@@ -318,6 +354,33 @@ export class StaticGtfsService {
       const list = this.tripsByRoute.get(trip.routeId) ?? [];
       list.push(trip);
       this.tripsByRoute.set(trip.routeId, list);
+
+      if (this.agencyId === 'go') {
+        const dest = stripLinePrefix(r.trip_headsign ?? '');
+        if (dest) {
+          const bucket = goDirCounts.get(r.route_id) ?? { in: new Map(), out: new Map() };
+          const target = r.direction_id === '1' ? bucket.in : bucket.out;
+          target.set(dest, (target.get(dest) ?? 0) + 1);
+          goDirCounts.set(r.route_id, bucket);
+        }
+      }
+    }
+
+    if (this.agencyId === 'go') {
+      this.goRouteDirections = new Map();
+      for (const [routeId, b] of goDirCounts) {
+        // Prefer the branch that matches the line's namesake (e.g. Kitchener line →
+        // "Kitchener GO" over the more frequent short-turn "Bramalea GO"); otherwise
+        // fall back to the most-served outbound terminus.
+        const longName = this.routes.get(routeId)?.longName ?? '';
+        const namesake = longName
+          ? [...b.out.keys()].find((k) => k.toLowerCase().includes(longName.toLowerCase()))
+          : undefined;
+        this.goRouteDirections.set(routeId, {
+          inbound: topCountKey(b.in) ?? 'Union Station GO',
+          outbound: namesake ?? topCountKey(b.out) ?? '',
+        });
+      }
     }
 
     for (const r of parseGtfsTable(stopTimesRaw)) {
@@ -443,16 +506,32 @@ export class StaticGtfsService {
   routesServingStop(stopId: string): { route: GtfsRoute; headsign: string }[] {
     if (this.agencyId === 'go') {
       const rows = GO_STOP_ROUTES[stopId] ?? [];
-      return rows
-        .map((row) => {
-          const route = this.routes.get(row.routeId);
-          if (!route) return null;
-          return { route, headsign: row.headsign };
-        })
-        .filter((x): x is { route: GtfsRoute; headsign: string } => x !== null)
-        .sort((a, b) =>
-          a.route.shortName.localeCompare(b.route.shortName, undefined, { numeric: true })
-        );
+      const stop = this.getStop(stopId);
+      /** Union is the shared inbound terminus — trains only depart it outbound. */
+      const isUnion = stopId === 'UN' || /union station/i.test(stop?.stopName ?? '');
+      const out: { route: GtfsRoute; headsign: string }[] = [];
+      for (const row of rows) {
+        const route = this.routes.get(row.routeId);
+        if (!route) continue;
+        const dirs = this.goRouteDirections.get(row.routeId);
+        const outboundHead = dirs?.outbound || route.longName;
+        const inboundHead = dirs?.inbound || 'Union Station GO';
+        if (outboundHead) {
+          out.push({
+            route: { ...route, routeId: goRouteIdWithDirection(row.routeId, '0') },
+            headsign: outboundHead,
+          });
+        }
+        if (!isUnion) {
+          out.push({
+            route: { ...route, routeId: goRouteIdWithDirection(row.routeId, '1') },
+            headsign: inboundHead,
+          });
+        }
+      }
+      return out.sort((a, b) =>
+        a.route.shortName.localeCompare(b.route.shortName, undefined, { numeric: true })
+      );
     }
 
     const times = this.stopTimesAtStop.get(stopId) ?? [];

@@ -9,7 +9,7 @@ export type WidgetDisplayProps = {
   footerTitle: string;
   /** Footer line 2 — e.g. "for next 301". */
   footerLabel: string;
-  state: 'leave_in' | 'bus_in' | 'fallback' | 'empty';
+  state: 'leave_in' | 'fallback' | 'empty';
   /** Open in Maps when the widget supports a URL (app + widget bridge). */
   mapsUrl: string;
 };
@@ -38,8 +38,10 @@ export function normalizeWidgetProps(props?: Partial<WidgetDisplayProps> | null)
 
 export function getWidgetPrimaryUnitLabel(props: Partial<WidgetDisplayProps>) {
   if (props.state === 'empty') return 'setup';
-  if (props.primaryValue === '00' || props.state === 'bus_in') return 'leave now';
-  if (props.unitLabel?.toLowerCase().includes('second')) return 'seconds';
+  if (props.state === 'fallback') return 'no buses';
+  const unit = props.unitLabel?.toLowerCase() ?? '';
+  if (unit.includes('until bus')) return 'to bus';
+  if (unit.includes('second')) return 'seconds';
   return Number(props.primaryValue) === 1 ? 'minute' : 'minutes';
 }
 
@@ -48,7 +50,7 @@ export function formatWidgetFooterLabel(params: {
   state: WidgetDisplayProps['state'];
 }): string {
   const { busArrivalSec, state } = params;
-  if (state === 'fallback') return 'Realtime unavailable';
+  if (state === 'fallback') return 'No buses right now';
   if (state === 'empty') return '';
   if (busArrivalSec == null) return '';
   if (busArrivalSec < 60) {
@@ -156,8 +158,8 @@ export function countdownToWidgetProps(state: CountdownState): WidgetDisplayProp
       };
     case 'no_realtime':
       return {
-        primaryValue: '…',
-        unitLabel: 'Realtime unavailable',
+        primaryValue: '—',
+        unitLabel: 'No buses right now',
         routeBadge: badge,
         headsign: head,
         footerTitle: '',
@@ -168,28 +170,33 @@ export function countdownToWidgetProps(state: CountdownState): WidgetDisplayProp
         mapsUrl: state.mapsUrl,
       };
     case 'leave_now': {
+      /**
+       * Reached only when every known bus is already past its leave time (e.g.
+       * end of service). Keep the number moving as a live "until bus" countdown
+       * instead of freezing at "00 / leave now".
+       */
       const footer = followingFooter(state, badge);
-      const busSec = state.busArrivalSec;
-      if (busSec != null && busSec > 0 && busSec <= 90) {
-        return {
-          primaryValue: String(busSec).padStart(2, '0'),
-          unitLabel: busSec === 1 ? 'Second until bus' : 'Seconds until bus',
-          routeBadge: badge,
-          headsign: head,
-          footerTitle: footer.title,
-          footerLabel: footer.subtitle,
-          state: 'leave_in',
-          mapsUrl: state.mapsUrl,
-        };
-      }
+      const busSec = state.busArrivalSec ?? 0;
+      const showSeconds = busSec > 0 && busSec < 60;
+      const busMinutes = state.busMinutes ?? 0;
+      const primaryValue = showSeconds
+        ? String(busSec).padStart(2, '0')
+        : formatWidgetPrimaryValue(busMinutes);
+      const unitLabel = showSeconds
+        ? busSec === 1
+          ? 'Second until bus'
+          : 'Seconds until bus'
+        : busMinutes === 1
+          ? 'Minute until bus'
+          : 'Minutes until bus';
       return {
-        primaryValue: '00',
-        unitLabel: 'leave now',
+        primaryValue,
+        unitLabel,
         routeBadge: badge,
         headsign: head,
         footerTitle: footer.title,
         footerLabel: footer.subtitle,
-        state: 'bus_in',
+        state: 'leave_in',
         mapsUrl: state.mapsUrl,
       };
     }

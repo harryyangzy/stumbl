@@ -35,8 +35,10 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
 
   function getPrimaryUnitLabel(p: WidgetDisplayProps) {
     if (p.state === 'empty') return 'setup';
-    if (p.primaryValue === '00' || p.state === 'bus_in') return 'leave now';
-    if (p.unitLabel.toLowerCase().includes('second')) return 'seconds';
+    if (p.state === 'fallback') return 'no buses';
+    const unit = p.unitLabel.toLowerCase();
+    if (unit.includes('until bus')) return 'to bus';
+    if (unit.includes('second')) return 'seconds';
     return Number(p.primaryValue) === 1 ? 'minute' : 'minutes';
   }
 
@@ -47,7 +49,7 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
   }
 
   function getFooterSubtitle(p: WidgetDisplayProps) {
-    if (p.state === 'fallback') return 'Realtime unavailable';
+    if (p.state === 'fallback') return 'No buses right now';
     if (p.state === 'empty') return '';
     return p.footerLabel ?? '';
   }

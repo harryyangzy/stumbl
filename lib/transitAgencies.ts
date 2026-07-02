@@ -73,9 +73,23 @@ export function getTransitAgency(id: TransitAgencyId | undefined | null): Transi
 /** Swap to false to hit live GTFS-RT endpoints (requires network). */
 export const USE_MOCK_REALTIME = false;
 
+/**
+ * Live data only. When false, the countdown never falls back to the bundled
+ * static timetable — it shows exactly what the live GTFS-RT / NextService feeds
+ * report, and "No buses right now" only when the live feed truly has nothing
+ * upcoming. Flip to true to re-enable the (current) schedule as a gap-filler
+ * beyond the live prediction horizon.
+ */
+export const USE_SCHEDULE_FALLBACK = false;
+
 export const REALTIME_FETCH_TIMEOUT_MS = 25_000;
 
-/** GTFS-RT header timestamp older than this is treated as stale. */
-export const REALTIME_STALE_AFTER_SEC = 120;
+/**
+ * GTFS-RT header timestamp older than this is treated as stale and its
+ * predictions discarded. Feeds publish absolute future arrival times, so we
+ * allow a generous window — a header that lags a couple of minutes still
+ * carries valid upcoming departures and shouldn't blank the countdown.
+ */
+export const REALTIME_STALE_AFTER_SEC = 300;
 
 export const GTFS_TIMEZONE = 'America/Toronto';

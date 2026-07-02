@@ -3,4 +3,5 @@ export {
   REALTIME_FETCH_TIMEOUT_MS,
   REALTIME_STALE_AFTER_SEC,
   USE_MOCK_REALTIME,
+  USE_SCHEDULE_FALLBACK,
 } from '@/lib/transitAgencies';

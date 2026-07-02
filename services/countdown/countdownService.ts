@@ -4,6 +4,12 @@ import type { ArrivalPrediction, RealtimeFetchResult } from '@/types/realtime';
 
 export type CountdownKind =
   | 'leave_in'
+  /**
+   * Every known bus is already past its leave time (end-of-service edge). The
+   * widget shows a live "until bus" countdown for the soonest arrival rather
+   * than a static "leave now". In normal operation we roll to the next bus and
+   * stay in `leave_in`, so this is rarely emitted.
+   */
   | 'leave_now'
   | 'no_realtime'
   | 'no_setup';
@@ -109,16 +115,35 @@ export function computeCountdownState(params: {
   const walkMs = commute.walkingMinutes * 60 * 1000;
   const bufferMs = commute.bufferMinutes * 60 * 1000;
 
+  /**
+   * Only discard predictions when the feed carries a timestamp that is genuinely
+   * old (a frozen publisher). A missing timestamp on an otherwise-live fetch is
+   * trusted — the arrivals are absolute future times we just retrieved — so a
+   * headerless feed never blanks the countdown.
+   */
   const feedStale =
-    realtime.feedTimestampSec === null ||
+    realtime.feedTimestampSec !== null &&
     nowSec - realtime.feedTimestampSec > REALTIME_STALE_AFTER_SEC;
 
   const preds = feedStale ? [] : predictions;
 
   const arrivals = collectUpcomingArrivals(preds, nextScheduled, nowMs);
-  const next = arrivals[0] ?? null;
+  const leadMs = walkMs + bufferMs;
 
-  if (!next) {
+  /**
+   * Pick the soonest bus we can still leave on time for. Once the leave moment
+   * for a bus passes, we roll forward to the next departure instead of freezing
+   * at "00 / leave now". Only when every known bus is already un-catchable do we
+   * fall back to the soonest arrival (end-of-service edge) as a live "until bus"
+   * countdown — the number always keeps moving, never a static 00.
+   */
+  let chosenIdx = arrivals.findIndex((a) => a.arrivalMs - leadMs > nowMs);
+  const missedLeaveWindow = chosenIdx === -1 && arrivals.length > 0;
+  if (missedLeaveWindow) chosenIdx = 0;
+
+  const chosen = chosenIdx >= 0 ? arrivals[chosenIdx] : null;
+
+  if (!chosen) {
     return {
       kind: 'no_realtime',
       routeShort: commute.routeShortName,
@@ -128,7 +153,7 @@ export function computeCountdownState(params: {
     };
   }
 
-  const { arrivalMs, fromRealtime } = next;
+  const { arrivalMs, fromRealtime } = chosen;
   const leaveAt = arrivalMs - walkMs - bufferMs;
   const busArrivalSec = Math.max(0, Math.ceil((arrivalMs - nowMs) / 1000));
   const busMinutes = Math.max(0, Math.ceil((arrivalMs - nowMs) / 60_000));
@@ -164,7 +189,7 @@ export function computeCountdownState(params: {
     nextBusFromRealtime,
   };
 
-  if (nowMs >= leaveAt && nowMs < arrivalMs) {
+  if (missedLeaveWindow) {
     return {
       kind: 'leave_now',
       leaveMinutes: 0,

@@ -199,12 +199,21 @@ export class RealtimeGtfsService {
     try {
       const agency = getTransitAgency(commute.agencyId);
       if (agency.metrolinxApi) {
+        /**
+         * Stop/NextService is the reliable live source for GO: it returns the
+         * next departures (with realtime timing + direction) per stop. The bulk
+         * GTFS-RT protobuf endpoint frequently responds with JSON and fails to
+         * decode, so we lead with NextService and only try the protobuf feed if
+         * NextService yields nothing.
+         */
+        const next = await fetchGoNextServiceRealtime(commute, now);
+        if (next.predictions.length > 0) return next;
         const bytes = await fetchGoTripUpdatesProtobuf();
         if (bytes) {
           const parsed = parseTripUpdatesProtobuf(bytes);
           if (parsed.predictions.length > 0) return parsed;
         }
-        return fetchGoNextServiceRealtime(commute, now);
+        return next;
       }
       if (agency.realtime.tripUpdates.length === 0) {
         return { predictions: [], feedTimestampSec: null, source: 'unavailable' };

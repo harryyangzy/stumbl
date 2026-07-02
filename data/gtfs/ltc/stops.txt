@@ -106,8 +106,8 @@ ANDOVIG1,160,Andover at Village Green NB - #160,,42.953684,-81.275744,,,,,,0
 ANDOVIG2,161,Andover at Village Green SB - #161,,42.95356,-81.275802,,,,,,0
 ANDOVIS2,163,Andover at Viscount SB - #163,,42.948172,-81.275288,,,,,,0
 ANDOVIS3,164,Andover north of Viscount  NB - #164,,42.948217,-81.275205,,,,,,0
-ARGYMAL1,166,Argyle Mall SB - Stop 1 - #166,,43.002596,-81.17356,,,,,,0
-ARGYMAL2,167,Argyle Mall NB - Stop 2 - #167,,43.002643,-81.173369,,,,,,0
+ARGYMAL1,166,Argyle Mall SB - Stop 1 - #166,,43.00273,-81.17363,,,,,,0
+ARGYMAL2,167,Argyle Mall NB - Stop 2 - #167,,43.00292,-81.17351,,,,,,0
 ASHBMIL1,168,Ashbury at Millbank EB - #168,,42.937301,-81.202254,,,,,,0
 ASHBMIL2,169,Ashbury at Millbank WB - #169,,42.937358,-81.202382,,,,,,0
 ASHBSUR1,170,Ashbury at Surrey Cres NB - #170,,42.938413,-81.204312,,,,,,0
@@ -277,24 +277,24 @@ COLBOXFD,438,Colborne at Oxford SB - #438,,42.99796,-81.24567,,,,,,0
 COLBPAM1,439,Colborne at Pall Mall NB - #439,,42.994937,-81.243983,,,,,,0
 COLBPAM2,440,Colborne at Pall Mall SB - #440,,42.994842,-81.244053,,,,,,0
 COLBPRIN,443,Colborne at Princess NB - #443,,42.990303,-81.241638,,,,,,0
-COMMADE1,445,Commissioners at Adelaide EB - #445,,42.959153,-81.2149,,,,,,0
-COMMADE2,446,Commissioners east of Adelaide WB - #446,,42.959517,-81.214417,,,,,,0
+COMMADE1,445,Commissioners at Adelaide EB - #445,,42.95917,-81.21492,,,,,,0
+COMMADE2,446,Commissioners east of Adelaide WB - #446,,42.95954,-81.21447,,,,,,0
 COMMADE4,447,Commissioners west of Adelaide WB - #447,,42.958643,-81.220485,,,,,,0
 COMMBOL2,448,Commissioners at Boler WB - #448,,42.959479,-81.331786,,,,,,0
 COMMDEV1,449,Commissioners at Deveron EB - #449,,42.962324,-81.194459,,,,,,0
 COMMDEV2,450,Commissioners west of Deveron 1 WB - #450,,42.962337,-81.195987,,,,,,0
 COMMDEV4,452,Commissioners west of Deveron 2 WB - #452,,42.962191,-81.1969,,,,,,0
 COMMDEV6,453,Commissioners east of Deveron WB - #453,,42.962645,-81.193643,,,,,,0
-COMMFRO1,454,Commissioners at Frontenac EB - #454,,42.960312,-81.20809,,,,,,0
-COMMFRO2,455,Commissioners at Frontenac WB - #455,,42.960331,-81.209188,,,,,,0
+COMMFRO1,454,Commissioners at Frontenac EB - #454,,42.96033,-81.20811,,,,,,0
+COMMFRO2,455,Commissioners at Frontenac WB - #455,,42.96037,-81.20917,,,,,,0
 COMMGRD1,456,Commissioners at Gordon EB - #456,,42.956583,-81.264504,,,,,,0
 COMMGRD2,457,Commissioners at Gordon WB - #457,,42.956814,-81.263811,,,,,,0
 COMMHAM2,458,Commissioners east of Halls Mills WB - #458,,42.960372,-81.334565,,,,,,0
 COMMHUXL,461,Commissioners at Huxley WB - #461,,42.95665,-81.267432,,,,,,0
-COMMKIE1,462,Commissioners at King Edward EB - #462,,42.960762,-81.205452,,,,,,0
-COMMKIE2,463,Commissioners at King Edward WB - #463,,42.960842,-81.205928,,,,,,0
-COMMLEA1,464,Commissioners at Leathorne EB - #464,,42.959597,-81.212585,,,,,,0
-COMMLEA2,465,Commissioners at Leathorne WB - #465,,42.95983,-81.212451,,,,,,0
+COMMKIE1,462,Commissioners at King Edward EB - #462,,42.96076,-81.2055,,,,,,0
+COMMKIE2,463,Commissioners at King Edward WB - #463,,42.96086,-81.20595,,,,,,0
+COMMLEA1,464,Commissioners at Leathorne EB - #464,,42.95961,-81.21259,,,,,,0
+COMMLEA2,465,Commissioners at Leathorne WB - #465,,42.95984,-81.21246,,,,,,0
 COMMLYN4,468,Opposite St George's Parish - #468,,42.958091,-81.326569,,,,,,0
 COMMNASH,470,Commissioners at Nashua EB - #470,,42.95727,-81.324072,,,,,,0
 COMMNOR1,471,Commissioners at North EB - #471,,42.956376,-81.321049,,,,,,0
@@ -303,12 +303,12 @@ COMMNOT1,473,Commissioners west of Nottinghill EB - #473,,42.952527,-81.299502,,
 COMMNOT3,474,Commissioners east of Nottinghill EB - #474,,42.95305,-81.296777,,,,,,0
 COMMPOM1,475,Commissioners west of Pondmills EB - #475,,42.961323,-81.201406,,,,,,0
 COMMPOM3,477,Commissioners east of Pondmills EB - #477,,42.961925,-81.197476,,,,,,0
-COMMPOM4,478,Commissioners west of Pondmills WB - #478,,42.9615,-81.20151,,,,,,0
+COMMPOM4,478,Commissioners west of Pondmills WB - #478,,42.96152,-81.20154,,,,,,0
 COMMSPR1,479,Commissioners at Springbank Park EB - #479,,42.958444,-81.328319,,,,,,0
 COMMSPR2,480,Commissioners & Springbank Dr WB - #480,,42.955838,-81.318653,,,,,,0
 COMMSPR4,481,Commissioners at Springbank Park WB - #481,,42.958611,-81.328577,,,,,,0
 COMMSTEP,482,Commissioners at Stephen WB - #482,,42.962034,-81.339632,,,,,,0
-COMMVISC,483,Commissioners at Viscount EB - #483,,42.95637,-81.26871,,,,,,0
+COMMVISC,483,Commissioners at Viscount EB - #483,,42.95636,-81.26876,,,,,,0
 CRANCOMM,487,Cranbrook at Commissioners NB - #487,,42.951921,-81.302897,,,,,,0
 CRANHIMO,488,Cranbrook at Hillsmount NB - #488,,42.947556,-81.303783,,,,,,0
 CRUMPAGE,490,Crumlin at Page NB - #490,,43.018673,-81.150931,,,,,,0
@@ -482,7 +482,6 @@ GOREBRAE,783,Gore at Braeside WB - #783,,42.978433,-81.172081,,,,,,0
 GOREFIRE,785,Gore at Firestone WB - #785,,42.979208,-81.169434,,,,,,0
 GRANHIG1,790,Grand at High EB - #790,,42.971973,-81.240767,,,,,,0
 GRANHIG2,791,Grand at High WB - #791,,42.972112,-81.24004,,,,,,0
-GRANHIG4,792,84 Grand WB - #792,,42.971894,-81.241983,,,,,,0
 GRENADEL,800,Grenfell at Adelaide WB - #800,,43.038129,-81.256174,,,,,,0
 GRENGREN,801,Grenfell at Grenfell Cr WB - #801,,43.03882,-81.251795,,,,,,0
 GRENMIDA,803,Grenfell at Midale WB - #803,,43.040496,-81.248311,,,,,,0
@@ -975,10 +974,8 @@ RICHMILL,1493,Richmond at Mill SB - #1493,,42.992941,-81.251948,,,,,,0
 RICHOXF1,1494,Richmond at Oxford NB - #1494,,42.995977,-81.253301,,,,,,0
 RICHOXF2,1495,Richmond at Oxford SB - #1495,,42.994909,-81.252915,,,,,,0
 RICHPALL,1496,Richmond at Pall Mall NB - #1496,,42.992773,-81.251649,,,,,,0
-RICHPAR2,1497,Richmond at Parkdale Ave SB - #1497,,43.011195,-81.263629,,,,,,0
 RICHQUEE,1501,Richmond at Queens NB - #1501,,42.985269,-81.25034,,,,,,0
 RICHRAY1,1502,Richmond north of Raymond NB - #1502,,43.013188,-81.265588,,,,,,0
-RICHRAY2,1503,Richmond at Raymond SB - #1503,,43.01212,-81.26462,,,,,,0
 RICHREG1,1506,Richmond at Regent NB - #1506,,43.005693,-81.25836,,,,,,0
 RICHSHAV,1508,Richmond at Shavian SB - #1508,,43.021409,-81.279995,,,,,,0
 RICHSIM1,1509,Richmond at Simcoe NB - #1509,,42.977308,-81.246413,,,,,,0
@@ -1225,10 +1222,10 @@ VERUEDEN,1852,Verulam at Eden SB - #1852,,42.947258,-81.231175,,,,,,0
 VICTCOMM,1854,Victoria Hospital at Commissioners NB - #1854,,42.959454,-81.223182,,,,,,0
 VICTLOT9,1855,Victoria Hospital Cancer Centre SB - #1855,,42.959952,-81.228915,,,,,,0
 VICTMUBU,1856,Victoria Hospital at Medical Unit Building - #1856,,42.961257,-81.221941,,,,,,0
-VICTWES1,1857,Victoria Hospital at Western Counties EB - #1857,,42.959117,-81.223662,,,,,,0
+VICTWES1,1857,Victoria Hospital at Western Counties EB - #1857,,42.95909,-81.22371,,,,,,0
 VICTZONB,1859,Victoria Hospital & Baseline Rd Ent WB - #1859,,42.961443,-81.226937,,,,,,0
 VISCCOM2,1872,Viscount AT Commissioners SB - #1872,,42.955816,-81.269168,,,,,,0
-VISCCRAN,1873,Viscount at Cranbrook WB - #1873,,42.944409,-81.302864,,,,,,0
+VISCCRAN,1873,Viscount at Cranbrook WB - #1873,,42.94441,-81.3029,,,,,,0
 VISCFARN,1874,Viscount at Farnham Rd WB - #1874,,42.945708,-81.295842,,,,,,0
 VISCFOXM,1875,Viscount at Foxmill Cr WB - #1875,,42.947583,-81.284005,,,,,,0
 VISCGAL1,1876,Viscount at Galloway Cr FS NB - #1876,,42.95146,-81.268015,,,,,,0
@@ -1312,9 +1309,9 @@ WESTESSE,1991,Western at Essex St NB - #1991,,42.995468,-81.266679,,,,,,0
 WESTHOL1,1992,Western at Hollywood Cres NB - #1992,,42.996215,-81.27057,,,,,,0
 WESTHOL2,1993,Western at Hollywood Crt SB - #1993,,42.996161,-81.27083,,,,,,0
 WESTLAM2,1996,Western at Lambton  SB - #1996,,43.005491,-81.276961,,,,,,0
-WESTMAL1,1997,Westmount Mall at Stop 1 - #1997,,42.947415,-81.29255,,,,,,0
-WESTMAL2,1998,Westmount Mall at Stop 2 - #1998,,42.947407,-81.292334,,,,,,0
-WESTMAL3,1999,Westmount Mall at Stop 3 - #1999,,42.947484,-81.292059,,,,,,0
+WESTMAL1,1997,Westmount Mall at Stop 1 - #1997,,42.94741,-81.2926,,,,,,0
+WESTMAL2,1998,Westmount Mall at Stop 2 - #1998,,42.94743,-81.29239,,,,,,0
+WESTMAL3,1999,Westmount Mall at Stop 3 - #1999,,42.94747,-81.2921,,,,,,0
 WESTPLA1,2001,Western at Platts Lane NB - #2001,,42.996613,-81.274624,,,,,,0
 WESTPLA2,2002,Western at Platts Lane SB - #2002,,42.996341,-81.274171,,,,,,0
 WESTSAR2,2003,Western at Sarnia Rd SB - #2003,,43.001194,-81.276529,,,,,,0
@@ -1377,8 +1374,8 @@ WONDATTA,2096,Wonderland at Attawandaron Gt. SB - #2096,,43.01425,-81.30819,,,,,
 WONDBEA1,2097,Wonderland at Beaverbrook NB - #2097,,42.99006,-81.295692,,,,,,0
 WONDBEA2,2098,Wonderland at Beaverbrook Ave SB - #2098,,42.989438,-81.295648,,,,,,0
 WONDBLAC,2099,Wonderland at Blackacres Blvd SB - #2099,,43.00967,-81.30574,,,,,,0
-WONDCOM1,2100,Wonderland South of Commissioners NB - #2100,,42.95344,-81.290359,,,,,,0
-WONDCOM2,2101,Wonderland at Commissioners SB - #2101,,42.953736,-81.290681,,,,,,0
+WONDCOM1,2100,Wonderland South of Commissioners NB - #2100,,42.95342,-81.29035,,,,,,0
+WONDCOM2,2101,Wonderland at Commissioners SB - #2101,,42.95373,-81.29071,,,,,,0
 WONDCOM3,2102,Wonderland North of Commissioners NB - #2102,,42.955837,-81.290977,,,,,,0
 WONDFAR1,2103,Wonderland North of Farrah Stop 1 NB - #2103,,42.986003,-81.293578,,,,,,0
 WONDFAR2,2104,Wonderland North of Farrah SB - #2104,,42.985811,-81.293766,,,,,,0
@@ -1405,7 +1402,7 @@ WONDSDA1,2128,Wonderland at Southdale NB - #2128,,42.939594,-81.281397,,,,,,0
 WONDSPR1,2132,Wonderland at Springbank NB - #2132,,42.964403,-81.293102,,,,,,0
 WONDTEE1,2134,Wonderland at Teeple Terrace NB - #2134,,42.959046,-81.293315,,,,,,0
 WONDVIL1,2135,Wonderland at Village Green NB - #2135,,42.95074,-81.289716,,,,,,0
-WONDVIL2,2136,Wonderland at Village Green Ave SB - #2136,,42.951463,-81.290115,,,,,,0
+WONDVIL2,2136,Wonderland at Village Green Ave SB - #2136,,42.95146,-81.29015,,,,,,0
 WONDVIS2,2138,Wonderland at Viscount NS1 SB - #2138,,42.948855,-81.289568,,,,,,0
 WONDVIS3,2139,780 Wonderland Rd NB - #2139,,42.948946,-81.289303,,,,,,0
 WOODCAM1,2140,Woodward at Cambridge NB - #2140,,42.988255,-81.270527,,,,,,0
@@ -1440,7 +1437,6 @@ BERKBER1,2195,Berkshire at Berkshire Place NB - #2195,,42.962777,-81.288488,,,,,
 BERKBER2,2196,Berkshire at Berkshire Place SB - #2196,,42.962676,-81.288377,,,,,,0
 BERKGAR2,2198,Berkshire south of Gardenwood SB - #2198,,42.962572,-81.28437,,,,,,0
 BRADADE3,2203,Bradley at Adelaide EB - #2203,,42.93591,-81.20964,,,,,,0
-BRADPOMI,2204,Bradley at Pond Mills WB - #2204,,42.94069,-81.19282,,,,,,0
 BRADWIL4,2205,Bradley at Willow 2 WB - #2205,,42.934989,-81.218937,,,,,,0
 BRADWOPS,2206,White Oaks Elementary School - #2206,,42.9342,-81.232633,,,,,,0
 BRYDCORN,2207,Brydges at Cornish EB - #2207,,42.991416,-81.192435,,,,,,0
@@ -1449,8 +1445,8 @@ CHEABRA2,2209,Cheapside at Elliott WB - #2209,,43.007531,-81.235149,,,,,,0
 CLARWHI2,2212,Clarke at Whitney SB - #2212,,43.002719,-81.174882,,,,,,0
 COMMBOL1,2213,Commissioners at Boler EB - #2213,,42.959432,-81.332109,,,,,,0
 COMMMED1,2215,Commissioners at Meadowlilly EB - #2215,,42.963507,-81.18508,,,,,,0
-COMMMED2,2216,Commissioners at Meadowlilly WB - #2216,,42.963598,-81.186234,,,,,,0
-COMMWCO1,2217,Commissioners at Western Counties EB - #2217,,42.958442,-81.218679,,,,,,0
+COMMMED2,2216,Commissioners at Meadowlilly WB - #2216,,42.96361,-81.18627,,,,,,0
+COMMWCO1,2217,Commissioners at Western Counties EB - #2217,,42.95847,-81.21867,,,,,,0
 DUFFWATS,2218,Dufferin at Waterloo WB - #2218,,42.98848,-81.24351,,,,,,0
 EMERRIDG,2220,Emery at Ridgewood WB - #2220,,42.964458,-81.275884,,,,,,0
 FANSDER1,2227,Fanshawe at Derwent EB - #2227,,43.02276,-81.29546,,,,,,0
@@ -1492,7 +1488,7 @@ WILTPMI2,2299,Wilton Grove West of Pond Mills WB - #2299,,42.928073,-81.193661,,
 WILTPMI4,2300,Wilton Grove East of Pondmills WB - #2300,,42.928501,-81.189098,,,,,,0
 WILTSIS2,2303,990 Wilton Grove WB - #2303,,42.92765,-81.19867,,,,,,0
 WINDDOO1,2304,Windermere at Doon  EB - #2304,,43.020432,-81.258271,,,,,,0
-WONDVIS4,2305,Wonderland at Viscount Rd SB - #2305,,42.947805,-81.28928,,,,,,0
+WONDVIS4,2305,Wonderland at Viscount Rd SB - #2305,,42.94781,-81.28932,,,,,,0
 HUROBRI3,2306,945 Huron - #2306,,43.016243,-81.227928,,,,,,0
 BLUESUN1,2309,Bluebell at Sunningdale NB - #2309,,43.042783,-81.273013,,,,,,0
 COMMWHAR,2312,COMMISSIONERS & WHARNCLIF - #2312,,42.956949,-81.260082,,,,,,0
@@ -1551,41 +1547,41 @@ BEAVPROU,2418,Beaverbrook at Proudfoot EB - #2418,,42.990798,-81.29173,,,,,,0
 SEAGHYP1,2419,Seagull at Hyde Park EB - #2419,,43.008561,-81.335487,,,,,,0
 STANFAN1,2421,Stanton at Fanshawe Park Rd NB - #2421,,43.010842,-81.333697,,,,,,0
 VICTZON7,2423,Victoria Hospital at Zone E WB - #2423,,42.961601,-81.224164,,,,,,0
-COMMWCO2,2426,Commissioners at Western Counties Rd - #2426,,42.958531,-81.223029,,,,,,0
+COMMWCO2,2426,Commissioners at Western Counties Rd - #2426,,42.95855,-81.22307,,,,,,0
 WELLCRE2,2428,Wellington Between Creston and Wilkins NB - #2428,,42.948492,-81.227842,,,,,,0
 SOWEMCCA,2433,South Wenige at McCallum WB - #2433,,43.044845,-81.249525,,,,,,0
 SUNNGOUG,2434,Sunningdale at Gough EB - #2434,,43.050511,-81.247662,,,,,,0
 THISSWEN,2435,Thistlewood at South Wenige EB - #2435,,43.046989,-81.253405,,,,,,0
-WESTMAL4,2436,Westmount Mall at Stop 4 - #2436,,42.947502,-81.291672,,,,,,0
-WESTMAL5,2437,Westmount Mall at Stop 5 - #2437,,42.9473,-81.292217,,,,,,0
-WESTMAL6,2438,Westmount Mall at Stop 6 - #2438,,42.947352,-81.291827,,,,,,0
+WESTMAL4,2436,Westmount Mall at Stop 4 - #2436,,42.94753,-81.29169,,,,,,0
+WESTMAL5,2437,Westmount Mall at Stop 5 - #2437,,42.94731,-81.29229,,,,,,0
+WESTMAL6,2438,Westmount Mall at Stop 6 - #2438,,42.94736,-81.29186,,,,,,0
 HIGBREMB,2447,Highbury at Rembrandt Valley SB - #2447,,43.033142,-81.222247,,,,,,0
 PONDSCE2,2449,Pond Mills north of Scenic SB - #2449,,42.972444,-81.209591,,,,,,0
 SHELODEL,2452,Shelborne at Odell Place EB - #2452,,42.96255,-81.19923,,,,,,0
 COMMHIG1,2453,Commissioners at Highbury EB - #2453,,42.963056,-81.188761,,,,,,0
 VALEDER1,2458,Valetta at Deer Park EB - #2458,,42.975214,-81.305469,,,,,,0
-COMMBEA1,2461,Commissioners at Beachwood WB - #2461,,42.956137,-81.276837,,,,,,0
-COMMBEA2,2462,Commissioners west of Beachwood EB - #2462,,42.955804,-81.278701,,,,,,0
-COMMBEA3,2463,353 Commissioners - #2463,,42.955854,-81.279878,,,,,,0
-COMMFOE1,2464,Commissioners at Forest Edge WB - #2464,,42.954813,-81.287851,,,,,,0
-COMMFOE2,2465,Commissioners at Forest Edge EB - #2465,,42.954529,-81.288286,,,,,,0
-COMMTOP1,2466,Commissioners at Topping Lane WB - #2466,,42.955326,-81.284038,,,,,,0
-COMMTOP2,2467,Commissioners at Topping Lane EB - #2467,,42.955275,-81.283406,,,,,,0
-DARNMEAD,2468,Darnley at Meadowgate EB - #2468,,42.954763,-81.173716,,,,,,0
+COMMBEA1,2461,Commissioners at Beachwood WB - #2461,,42.95618,-81.27687,,,,,,0
+COMMBEA2,2462,Commissioners west of Beachwood EB - #2462,,42.95576,-81.27965,,,,,,0
+COMMBEA3,2463,353 Commissioners - #2463,,42.956,-81.27904,,,,,,0
+COMMFOE1,2464,Commissioners at Forest Edge WB - #2464,,42.95485,-81.28783,,,,,,0
+COMMFOE2,2465,Commissioners at Forest Edge EB - #2465,,42.9545,-81.28834,,,,,,0
+COMMTOP1,2466,Commissioners at Topping Lane WB - #2466,,42.95536,-81.28412,,,,,,0
+COMMTOP2,2467,Commissioners at Topping Lane EB - #2467,,42.95527,-81.28336,,,,,,0
+DARNMEAD,2468,Darnley at Meadowgate EB - #2468,,42.9548,-81.17365,,,,,,0
 FANSGLE3,2469,Fanshawe at Glenora EB - #2469,,43.039771,-81.2382,,,,,,0
 FANSMCL3,2470,Fanshawe at Stackhouse EB - #2470,,43.040448,-81.235822,,,,,,0
 GLENGLE2,2472,Glenora at Glengarry WB - #2472,,43.031788,-81.243471,,,,,,0
 GLENGLV2,2473,Glenora at Glenview WB - #2473,,43.030324,-81.247323,,,,,,0
 GLENMCG1,2474,Glenora at McGill WB - #2474,,43.03344,-81.23894,,,,,,0
 GLENRID2,2475,Glenora at Rideau WB - #2475,,43.035027,-81.236915,,,,,,0
-LIGHEMER,2476,Lighthouse at Emerald NB - #2476,,42.958934,-81.171508,,,,,,0
-LIGHREAR,2477,Lighthouse at Reardon NB - #2477,,42.960028,-81.171739,,,,,,0
-LIGHWHSA,2478,Lighthouse at White Sands NB - #2478,,42.956574,-81.170588,,,,,,0
-MEADDORM,2482,Meadowgate at Dormer SB - #2482,,42.956891,-81.179056,,,,,,0
-MEADEVAN,2483,Meadowgate at Evans SB - #2483,,42.960995,-81.180924,,,,,,0
+LIGHEMER,2476,Lighthouse at Emerald NB - #2476,,42.95899,-81.1715,,,,,,0
+LIGHREAR,2477,Lighthouse at Reardon NB - #2477,,42.96001,-81.17171,,,,,,0
+LIGHWHSA,2478,Lighthouse at White Sands NB - #2478,,42.95663,-81.17058,,,,,,0
+MEADDORM,2482,Meadowgate at Dormer SB - #2482,,42.95689,-81.179,,,,,,0
+MEADEVAN,2483,Meadowgate at Evans SB - #2483,,42.96099,-81.18094,,,,,,0
 MEADGOOD,2484,Meadowgate at Goodfellow SB - #2484,,42.958945,-81.181192,,,,,,0
 MEADREA3,2485,Meadowgate at Reardon SB - #2485,,42.962849,-81.180444,,,,,,0
-REARCHE1,2486,Reardon at Chelton WB - #2486,,42.96102,-81.174192,,,,,,0
+REARCHE1,2486,Reardon at Chelton WB - #2486,,42.96107,-81.17423,,,,,,0
 ROXBCAS2,2488,Roxburgh at Castleton WB - #2488,,42.919576,-81.20377,,,,,,0
 SISEGVA2,2490,Sise at Green Valley NS SB - #2490,,42.922103,-81.202517,,,,,,0
 SISEWIG2,2492,Sise at Wilton Grove FS SB - #2492,,42.926519,-81.203194,,,,,,0
@@ -1646,17 +1642,17 @@ COMMMABR,2613,Commerce at Max Brose NB - #2613,,42.935515,-81.168433,,,,,,0
 FANSDAL2,2614,Fanshawe at Dalmagarry EB - #2614,,43.01225,-81.33152,,,,,,0
 FANSDALM,2615,Fanshawe at Dalmagarry WB - #2615,,43.01275,-81.33054,,,,,,0
 PARKMEHE,2616,Parkwood Hospital at Mental Health Building - #2616,,42.954056,-81.226738,,,,,,0
-COLTSOU2,2619,Colonel Talbot at Southdale NB - #2619,,42.936291,-81.317145,,,,,,0
-CRANBAR2,2620,Cranbrook at Barclay SB - #2620,,42.940934,-81.303746,,,,,,0
-CRANBAR3,2621,Cranbrook at Barclay NB - #2621,,42.940907,-81.303501,,,,,,0
-CRANBIRC,2622,Cranbrook at Birchmount WB - #2622,,42.938746,-81.305251,,,,,,0
-CRANROBE,2623,Cranbrook at Roberston Place EB - #2623,,42.93861,-81.306893,,,,,,0
-CRANSCHR,2624,Cranbrook at Schraeder WB - #2624,,42.938708,-81.307824,,,,,,0
+COLTSOU2,2619,Colonel Talbot at Southdale NB - #2619,,42.935757,-81.317146,,,,,,0
+CRANBAR2,2620,Cranbrook at Barclay SB - #2620,,42.94095,-81.30369,,,,,,0
+CRANBAR3,2621,Cranbrook at Barclay NB - #2621,,42.94094,-81.30358,,,,,,0
+CRANBIRC,2622,Cranbrook at Birchmount WB - #2622,,42.93871,-81.30533,,,,,,0
+CRANROBE,2623,Cranbrook at Roberston Place EB - #2623,,42.93866,-81.30695,,,,,,0
+CRANSCHR,2624,Cranbrook at Schraeder WB - #2624,,42.93866,-81.30782,,,,,,0
 CRANVIS2,2625,Cranbrook & Viscount NB - #2625,,42.944139,-81.302879,,,,,,0
-SOUTPOME,2629,Southdale at Pomeroy EB - #2629,,42.936735,-81.311914,,,,,,0
-TILLSOU2,2631,Tillman at Southdale NB - #2631,,42.937564,-81.308705,,,,,,0
-TILLSOUT,2632,Tillman at Southdale SB - #2632,,42.936485,-81.308691,,,,,,0
-VISCDUN2,2633,Viscount at Dunsmoor EB - #2633,,42.944816,-81.298567,,,,,,0
+SOUTPOME,2629,Southdale at Pomeroy EB - #2629,,42.93677,-81.31193,,,,,,0
+TILLSOU2,2631,Tillman at Southdale NB - #2631,,42.93756,-81.30869,,,,,,0
+TILLSOUT,2632,Tillman at Southdale SB - #2632,,42.93651,-81.30868,,,,,,0
+VISCDUN2,2633,Viscount at Dunsmoor EB - #2633,,42.94487,-81.29854,,,,,,0
 ADMITRA2,2635,Admiral at Trafalgar NB - #2635,,42.994339,-81.165684,,,,,,0
 CLARBAY2,2636,Clarke & Bayview NS NB - #2636,,42.978243,-81.162381,,,,,,0
 CLARBAY1,2637,Clarke & Bayview NS SB - #2637,,42.9787,-81.16278,,,,,,0
@@ -1698,7 +1694,6 @@ TWEEFAI2,2675,Tweedsmuir at Fairway EB - #2675,,42.982974,-81.190822,,,,,,0
 TWEEMAN2,2676,Tweedsmuir & Manitoulin EB - #2676,,42.982669,-81.187178,,,,,,0
 WEXFADM2,2677,Wexford & Admiral NB - #2677,,42.996373,-81.164955,,,,,,0
 HORTSPRI,2683,Horton at Springbank WB - #2683,,42.975348,-81.269979,,,,,,0
-GRANRIDO,2684,Grand at Bellevue EB - #2684,,42.97138,-81.246221,,,,,,0
 HYDENRN1,2685,Hyde Park at North Routledge Park NB - #2685,,43.003185,-81.334084,,,,,,0
 HYDENRN2,2686,Hyde Park at North Routledge Park 1 SB - #2686,,43.003538,-81.334617,,,,,,0
 HYDENRSL,2687,Hyde Park at North Routledge Park 2 SB - #2687,,43.000982,-81.333294,,,,,,0
@@ -1746,7 +1741,7 @@ FANSDAL3,2753,Fanshawe at Dalmagarry FS1 EB - #2753,,43.01343,-81.32749,,,,,,0
 FANSDAL4,2754,1055 Fanshawe Park Rd WB - #2754,,43.01414,-81.32574,,,,,,0
 FANSFOX1,2755,Fanshawe at Foxwood EB - #2755,,43.016456,-81.317319,,,,,,0
 FANSWON3,2756,Fanshawe west of Wonderland WB - #2756,,43.017394,-81.314351,,,,,,0
-COMMAND1,2758,Commissioners at Andover EB - #2758,,42.956092,-81.274636,,,,,,0
+COMMAND1,2758,Commissioners at Andover EB - #2758,,42.95611,-81.27463,,,,,,0
 COMMWES1,2759,Commissioners at West WB - #2759,,42.956494,-81.270401,,,,,,0
 DALHBRI2,2760,Dalhousie at Brixham WB - #2760,,42.938928,-81.291187,,,,,,0
 DALHMCM1,2761,Dalhousie south of McMaster SB - #2761,,42.940333,-81.28826,,,,,,0
@@ -1759,7 +1754,6 @@ SOUTGAR2,2767,Southcrest east of Gardenwood EB - #2767,,42.96383,-81.28437,,,,,,
 SOUTPINE,2768,Southdale at Pine Valley EB - #2768,,42.938701,-81.283717,,,,,,0
 SOUTSWCC,2769,Southdale at SW Community Centre EB - #2769,,42.938393,-81.288383,,,,,,0
 TOPPCOM1,2770,Topping Lane at Commissioners NB - #2770,,42.955886,-81.283106,,,,,,0
-WESTWIN1,2772,Windermere at Western EB - #2772,,43.015039,-81.276075,,,,,,0
 1985RIC1,2773,Opp 1985 Richmond NB - #2773,,43.035214,-81.286993,,,,,,0
 1985RICH,2774,1985 Richmond SB - #2774,,43.035062,-81.287222,,,,,,0
 ADELGLE1,2779,Adelaide at Glenora SB - #2779,,43.028772,-81.251725,,,,,,0
@@ -1785,20 +1779,20 @@ COLBGRO2,2798,Colborne at Grosvenor NB - #2798,,43.001633,-81.24739,,,,,,0
 COLBOXFO,2799,Colborne at Oxford NB - #2799,,42.998104,-81.245584,,,,,,0
 COLBSJM1,2800,Colborne at St. James NB - #2800,,42.999516,-81.246304,,,,,,0
 COLBSJM2,2801,Colborne at St. James SB - #2801,,42.999882,-81.246661,,,,,,0
-COMMCAR1,2802,Commissioners at Carnegie EB - #2802,,42.95707,-81.252776,,,,,,0
+COMMCAR1,2802,Commissioners at Carnegie EB - #2802,,42.95709,-81.25278,,,,,,0
 COMMCAR2,2803,Commissioners at Carnegie WB - #2803,,42.957299,-81.25202,,,,,,0
-COMMHIG2,2804,Commissioners at High EB - #2804,,42.957999,-81.234836,,,,,,0
-COMMHIG3,2805,Commissioners at High WB - #2805,,42.958172,-81.235294,,,,,,0
+COMMHIG2,2804,Commissioners at High EB - #2804,,42.95802,-81.23484,,,,,,0
+COMMHIG3,2805,Commissioners at High WB - #2805,,42.95816,-81.23535,,,,,,0
 COMMHIHE,2806,Commissioners at Highland Heights EB - #2806,,42.957504,-81.244155,,,,,,0
 COMMHILD,2807,Commissioners at Highland WB - #2807,,42.95706,-81.258284,,,,,,0
-COMMKIFD,2808,Commissioners at Kingsford WB - #2808,,42.958033,-81.238789,,,,,,0
-COMMRIDO,2809,Commissioners at Ridout WB - #2809,,42.957808,-81.242128,,,,,,0
-COMMUPP1,2810,Commissioners at Upper Queens FS EB - #2810,,42.95769,-81.240978,,,,,,0
-COMMWEL1,2811,Commissioners at Wellington NS EB - #2811,,42.958113,-81.231224,,,,,,0
-COMMWELL,2812,Commissioners at Wellington WB - #2812,,42.958353,-81.230904,,,,,,0
-COMMWHA1,2813,Commissioners at Wharncliffe FS EB - #2813,,42.956738,-81.259968,,,,,,0
+COMMKIFD,2808,Commissioners at Kingsford WB - #2808,,42.95802,-81.23882,,,,,,0
+COMMRIDO,2809,Commissioners at Ridout WB - #2809,,42.9578,-81.24216,,,,,,0
+COMMUPP1,2810,Commissioners at Upper Queens FS EB - #2810,,42.95772,-81.24102,,,,,,0
+COMMWEL1,2811,Commissioners at Wellington NS EB - #2811,,42.95814,-81.23124,,,,,,0
+COMMWELL,2812,Commissioners at Wellington WB - #2812,,42.95834,-81.23099,,,,,,0
+COMMWHA1,2813,Commissioners at Wharncliffe FS EB - #2813,,42.95677,-81.2598,,,,,,0
 COMMWHA2,2814,Commissioners at Wharncliffe WB - #2814,,42.9569,-81.26194,,,,,,0
-COMMWORT,2815,Commissioners at Wortley WB - #2815,,42.957617,-81.245721,,,,,,0
+COMMWORT,2815,Commissioners at Wortley WB - #2815,,42.95761,-81.24581,,,,,,0
 DEVEBANB,2816,Deveron at Banbury NB - #2816,,42.959415,-81.192223,,,,,,0
 DEVEGLEN,2817,Deveron at Glenroy EB - #2817,,42.954873,-81.194643,,,,,,0
 DEVELYSA,2818,Deveron at Lysanda NB - #2818,,42.956786,-81.191196,,,,,,0
@@ -1846,8 +1840,8 @@ PLANFAIR,2863,Plane Tree at Faircloth NS EB - #2863,,43.027095,-81.298419,,,,,,0
 QUARCALL,2865,Quarrier at Callingham FS NB - #2865,,43.031424,-81.296052,,,,,,0
 QUARPLN1,2866,Quarrier at Plane Tree SB - #2866,,43.028609,-81.295467,,,,,,0
 QUARPLNE,2867,Quarrier at Plane Tree NB - #2867,,43.028742,-81.295371,,,,,,0
-RALECOLT,2868,Raleigh at Colonel Talbot WB - #2868,,42.932945,-81.316234,,,,,,0
-RALERALE,2869,Raleigh at Raleigh Cres E Leg WB - #2869,,42.933356,-81.314034,,,,,,0
+RALECOLT,2868,Raleigh at Colonel Talbot WB - #2868,,42.93295,-81.31606,,,,,,0
+RALERALE,2869,Raleigh at Raleigh Cres E Leg WB - #2869,,42.93337,-81.31391,,,,,,0
 RICHBERN,2870,Richmond at Bernard NB - #2870,,43.011232,-81.263469,,,,,,0
 RICHNCR1,2871,Richmond at North Centre FS NB - #2871,,43.029675,-81.284077,,,,,,0
 RICHNCRE,2872,Richmond at North Centre FS SB - #2872,,43.028753,-81.28395,,,,,,0
@@ -1861,8 +1855,8 @@ SUNNRIC1,2880,Sunningdale at Richmond FS WB - #2880,,43.03824,-81.289365,,,,,,0
 SUNNRICH,2881,Sunningdale at Richmond NS EB - #2881,,43.038217,-81.28903,,,,,,0
 SUNNVIL1,2882,Sunningdale at Village Walk FS WB - #2882,,43.037112,-81.29324,,,,,,0
 SUNNVILW,2883,Sunningdale at Village Walk NS EB - #2883,,43.037003,-81.292949,,,,,,0
-TILBPOME,2884,Tilbury at Pomeroy WB - #2884,,42.934464,-81.310761,,,,,,0
-TILLRALE,2885,Tillman at Raleigh SB - #2885,,42.934839,-81.308467,,,,,,0
+TILBPOME,2884,Tilbury at Pomeroy WB - #2884,,42.93446,-81.31072,,,,,,0
+TILLRALE,2885,Tillman at Raleigh SB - #2885,,42.93488,-81.30845,,,,,,0
 WELLSDA5,2887,Wellington at Southdale NS 3 NB - #2887,,42.942176,-81.225262,,,,,,0
 WESTELG3,2889,Western at Elgin SB - #2889,,43.010028,-81.277456,,,,,,0
 WHARCAM1,2894,Wharncliffe at Campbell FS NB - #2894,,42.91413,-81.288532,,,,,,0
@@ -1917,10 +1911,7 @@ VENTINN1,2959 ,Venture at Innovation SB - #2959 ,,42.963626,-81.134293,,,,,,0
 WHARMOR2,2961 ,Wharncliffe at Morgan NS SB - #2961 ,,42.928928,-81.271164,,,,,,0
 KINGADE1,2962,King at Adelaide Station EB - #2962,,42.9873,-81.23149,,,,,,0
 KINGADE2,2963,King at Adelaide Station WB - #2963,,42.98759,-81.23088,,,,,,0
-BRADMIL1,2967,Bradley at Millbank EB - #2967,,42.93649,-81.20192,,,,,,0
-BRADMIL2,2968,Bradley at Millbank WB - #2968,,42.93658,-81.20202,,,,,,0
 HIGBEDG1,2969 ,Highbury at Edgevalley NB - #2969 ,,43.03612,-81.22332,,,,,,0
-BRADPOM1,2970,Bradley at Pond Mills EB - #2970,,42.94074,-81.19255,,,,,,0
 QUEERIC2,2971,Queens at Richmond 2 WB - #2971,,42.985467,-81.248881,,,,,,0
 ONTAKIN1,2972,Ontario at King Station NB - #2972,,42.990784,-81.221696,,,,,,0
 ONTAKIN2,2973,Ontario at King Station SB - #2973,,42.99046,-81.221794,,,,,,0
@@ -1940,7 +1931,9 @@ WONDSAR5,2987,Wonderland North of Sarnia NB - #2987,,42.99609,-81.2989,,,,,,0
 WONDSER2,2988,Sherwood Forest Mall SB - #2988,,43.00518,-81.30357,,,,,,0
 WONDWHI1,2989,Wonderland at Whiteacres NB - #2989,,43.0104,-81.30584,,,,,,0
 INNOBRA2,2990,Innovation North of Bradley SB - #2990,,42.95291,-81.13341,,,,,,0
+CHEEMAX1,2991,Cheese Factory at Max Brose SB - #2991,,42.93634,-81.16129,,,,,,0
 RICHCEN2,2998,Richmond at Central NB - #2998,,42.99012,-81.25068,,,,,,0
-TEGEDUN2,,Egerton at Dundas SB (Temp Stop) - #,,42.99211,-81.21739,,,,,,0
-TDUNFLO1,,Dundas at Florence EB (Temp Stop) - #,,42.99727,-81.20211,,,,,,0
-TEGEDUN1,,Egerton at Dundas NB (Temp Stop) - #,,42.99219,-81.21728,,,,,,0
+TEGEDUN2,,Egerton at Dundas SB (Temp Stop),,42.99211,-81.21739,,,,,,0
+TDUNFLO1,,Dundas at Florence EB (Temp Stop),,42.99732,-81.2019,,,,,,0
+TEGEDUN1,,Egerton at Dundas NB (Temp Stop),,42.99219,-81.21728,,,,,,0
+TFANCOLL,,Fanshawe College (Temp Stop),,43.01379,-81.19854,,,,,,0

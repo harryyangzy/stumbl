@@ -3,6 +3,7 @@ import {
   getMetrolinxApiKey,
   metrolinxApiUrl,
 } from '@/lib/metrolinxApiKey';
+import { goRouteDirection } from '@/services/gtfs/staticGtfsService';
 import type { ArrivalPrediction, RealtimeFetchResult } from '@/types/realtime';
 import type { SavedCommute } from '@/types/commute';
 
@@ -37,6 +38,16 @@ function flattenNextService(payload: unknown): NextServiceRow[] {
     if (Array.isArray(value)) rows.push(...(value as NextServiceRow[]));
   }
   return rows;
+}
+
+/**
+ * A GO departure is inbound when it heads to Union Station. Live feeds vary
+ * between "LW - Union Station" and "LW - Union Station GO", so we match the
+ * substring (which still excludes the outbound "Unionville GO" terminus).
+ */
+function rowIsInbound(row: NextServiceRow): boolean {
+  const raw = row.DirectionName ?? row.directionName ?? row.Direction ?? row.direction;
+  return typeof raw === 'string' && /union station/i.test(raw);
 }
 
 function lineCodeFromRow(row: NextServiceRow): string | null {
@@ -116,14 +127,17 @@ export function nextServiceToPredictions(params: {
   rows: NextServiceRow[];
   commute: SavedCommute;
   routeShortName: string;
+  /** Restrict to one travel direction; null keeps both (legacy commutes). */
+  direction?: 'inbound' | 'outbound' | null;
 }): ArrivalPrediction[] {
-  const { rows, commute, routeShortName } = params;
+  const { rows, commute, routeShortName, direction = null } = params;
   const line = routeShortName.toUpperCase();
   const predictions: ArrivalPrediction[] = [];
 
   for (const row of rows) {
     const rowLine = lineCodeFromRow(row);
     if (rowLine && rowLine !== line) continue;
+    if (direction && (direction === 'inbound') !== rowIsInbound(row)) continue;
     const arrivalTimeSec = arrivalSecFromRow(row);
     if (arrivalTimeSec == null) continue;
     predictions.push({
@@ -169,6 +183,7 @@ export async function fetchGoNextServiceRealtime(
     rows,
     commute,
     routeShortName: commute.routeShortName,
+    direction: goRouteDirection(commute.routeId),
   });
   const headerTs = metadata?.TimeStamp ? parseApiTime(metadata.TimeStamp) : nowSec;
   return {
@@ -189,6 +204,7 @@ export async function fetchGoScheduledArrivalsAfter(
     rows,
     commute,
     routeShortName: commute.routeShortName,
+    direction: goRouteDirection(commute.routeId),
   });
 
   return predictions

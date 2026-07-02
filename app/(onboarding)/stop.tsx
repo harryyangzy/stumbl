@@ -141,18 +141,21 @@ export default function StopScreen() {
   const showSuggestions = !selectedId || q.trim() !== (draft.stopName ?? '').trim();
 
   const hasTypedQuery = q.trim().length > 0;
-  /**
-   * Only show the panel under the pill while actively searching (incl. initial load spinner).
-   * When a stop is selected and the field matches, hide the panel so it doesn’t stack under the
-   * pill (double stroke / elevation overlap) — does not change list layout while typing.
-   */
-  const showResultsCard = showSuggestions && (loading || hasTypedQuery);
 
   const listedCount = addressStops
     ? addressStops.stops.length
     : results.length + addressResults.length;
-  const hasResultsList =
-    showResultsCard && !loading && showSuggestions && hasTypedQuery && listedCount > 0;
+
+  /**
+   * Only show the panel once the user has typed a query, and only while we're
+   * still loading (spinner) or there's at least one result. When a search comes
+   * back empty we hide the panel entirely rather than render a blank white box.
+   * The GTFS bundle still preloads silently on mount, so the panel never flashes
+   * open before the user types. When a stop is selected and the field matches,
+   * hide the panel so it doesn't stack under the pill.
+   */
+  const showResultsCard = showSuggestions && hasTypedQuery && (loading || listedCount > 0);
+  const hasResultsList = showResultsCard && !loading && listedCount > 0;
 
   /** Typing again abandons the "stops near address" view and resumes normal search. */
   const onChangeQuery = (text: string) => {
@@ -223,10 +226,6 @@ export default function StopScreen() {
                 <View style={[styles.resultsCardClip, { paddingTop: RESULTS_CARD_OVERLAP }]}>
                   {loading && showSuggestions ? (
                     <ActivityIndicator style={styles.loaderInCard} color={theme.brandGreen} />
-                  ) : null}
-
-                  {!loading && showSuggestions && hasTypedQuery && listedCount === 0 ? (
-                    <View style={styles.emptyInCard} />
                   ) : null}
 
                   {!loading && showSuggestions && hasTypedQuery && addressStops ? (
@@ -369,10 +368,6 @@ const styles = StyleSheet.create({
   },
   loaderInCard: {
     paddingVertical: theme.spaceLg,
-    backgroundColor: theme.white,
-  },
-  emptyInCard: {
-    minHeight: theme.spaceLg,
     backgroundColor: theme.white,
   },
   row: {

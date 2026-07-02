@@ -1,3 +1,4 @@
+import { USE_SCHEDULE_FALLBACK } from '@/lib/config';
 import { loadStumblWidget } from '@/lib/stumblWidgetLoader';
 import { widgetMapsUrlBridge } from '@/lib/widgetBridge';
 import { computeCountdownState } from '@/services/countdown/countdownService';
@@ -83,7 +84,15 @@ export async function refreshWidgetTimeline(
         at.getTime(),
         matchStopIds
       );
-      const nextScheduled = await staticGtfs.getScheduledArrivalsForCommute(commute, at, 8);
+      /**
+       * Live data only: the countdown reflects exactly what the realtime feed
+       * reports. The static timetable is never used as an arrival source (see
+       * USE_SCHEDULE_FALLBACK); the bundle still powers stop search and route
+       * lists elsewhere.
+       */
+      const nextScheduled = USE_SCHEDULE_FALLBACK
+        ? await staticGtfs.getScheduledArrivalsForCommute(commute, at, 8)
+        : [];
       const state = computeCountdownState({
         commute,
         now: at,
