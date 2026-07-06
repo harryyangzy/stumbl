@@ -38,7 +38,7 @@ export function normalizeWidgetProps(props?: Partial<WidgetDisplayProps> | null)
 }
 
 export function getWidgetPrimaryUnitLabel(props: Partial<WidgetDisplayProps>) {
-  if (props.state === 'empty') return 'setup';
+  if (props.state === 'empty') return '';
   if (props.state === 'fallback') return 'no buses';
   const unit = props.unitLabel?.toLowerCase() ?? '';
   if (unit.includes('until bus')) return 'to bus';
@@ -200,12 +200,12 @@ export function countdownToWidgetProps(state: CountdownState): WidgetDisplayProp
   switch (state.kind) {
     case 'no_setup':
       return {
-        primaryValue: '—',
-        unitLabel: 'Add your commute in Stumbl',
+        primaryValue: '00',
+        unitLabel: '',
         routeBadge: '',
         headsign: '',
-        footerTitle: '',
-        footerLabel: '',
+        footerTitle: 'select transit stop',
+        footerLabel: 'and route to continue',
         state: 'empty',
         mapsUrl: '',
       };

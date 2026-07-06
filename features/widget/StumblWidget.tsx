@@ -34,7 +34,7 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
   };
 
   function getPrimaryUnitLabel(p: WidgetDisplayProps) {
-    if (p.state === 'empty') return 'setup';
+    if (p.state === 'empty') return '';
     if (p.state === 'fallback') return 'no buses';
     const unit = p.unitLabel.toLowerCase();
     if (unit.includes('until bus')) return 'to bus';
@@ -43,12 +43,10 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
   }
 
   function getFooterTitle(p: WidgetDisplayProps) {
-    if (p.state === 'empty') return '';
     return p.footerTitle ?? '';
   }
 
   function getFooterSubtitle(p: WidgetDisplayProps) {
-    if (p.state === 'empty') return '';
     return p.footerLabel ?? '';
   }
 
