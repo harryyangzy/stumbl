@@ -12,8 +12,16 @@ import { useCommuteStore } from '@/store/commuteStore';
  */
 export function useCommuteCountdownRefresh() {
   const savedCommute = useCommuteStore((s) => s.savedCommute);
+  const hasHydrated = useCommuteStore((s) => s.hasHydrated);
 
   useEffect(() => {
+    /**
+     * Wait for the persisted store to rehydrate before touching the widget.
+     * Refreshing while `savedCommute` is still the initial null would push the
+     * "setup" placeholder over a real saved commute on cold launch.
+     */
+    if (!hasHydrated) return;
+
     const refresh = () => {
       void refreshWidgetTimeline(useCommuteStore.getState().savedCommute);
     };
@@ -28,5 +36,5 @@ export function useCommuteCountdownRefresh() {
       clearInterval(id);
       sub.remove();
     };
-  }, [savedCommute]);
+  }, [savedCommute, hasHydrated]);
 }

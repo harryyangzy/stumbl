@@ -24,6 +24,12 @@ export type OnboardingDraft = {
 type CommuteState = {
   savedCommute: SavedCommute | null;
   onboardingComplete: boolean;
+  /**
+   * False until `persist` finishes reading AsyncStorage. Guards against pushing a
+   * transient null `savedCommute` (the "setup" state) to the Home Screen widget
+   * before the saved commute has rehydrated on cold launch.
+   */
+  hasHydrated: boolean;
   draft: OnboardingDraft;
   setDraft: (patch: Partial<OnboardingDraft>) => void;
   resetDraft: () => void;
@@ -37,6 +43,7 @@ export const useCommuteStore = create<CommuteState>()(
     (set, get) => ({
       savedCommute: null,
       onboardingComplete: false,
+      hasHydrated: false,
       draft: {},
       setDraft: (patch) => set((s) => ({ draft: { ...s.draft, ...patch } })),
       resetDraft: () => set({ draft: {} }),
@@ -69,6 +76,10 @@ export const useCommuteStore = create<CommuteState>()(
         savedCommute: s.savedCommute,
         onboardingComplete: s.onboardingComplete,
       }),
+      /** Runs after the read attempt (even on empty/error) so the widget refresh can unblock. */
+      onRehydrateStorage: () => () => {
+        useCommuteStore.setState({ hasHydrated: true });
+      },
     }
   )
 );
