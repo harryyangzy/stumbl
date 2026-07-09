@@ -7,49 +7,16 @@ import { EditWidgetSheet, type EditSheetLine } from '@/components/ui/EditWidgetS
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { WidgetPreviewCard } from '@/components/ui/WidgetPreviewCard';
 import { formatLineDestinationLabel } from '@/lib/routeLineLabel';
-import { refreshWidgetTimeline } from '@/services/widget/widgetTimelineService';
-import { buildGoogleMapsCoordinateUrl } from '@/services/maps/googleMaps';
-import { computeCountdownState } from '@/services/countdown/countdownService';
+import { draftToSaved, getActiveCommute } from '@/lib/activeCommute';
+import { refreshWidgetTimeline, computeWidgetDisplayProps } from '@/services/widget/widgetTimelineService';
 import { getStaticGtfsService } from '@/services/gtfs/staticGtfsService';
-import { realtimeGtfsService, matchStopIdsForCommute } from '@/services/realtime/realtimeGtfsService';
 import { useTransitAgencyId } from '@/hooks/useTransitAgencyId';
 import {
-  countdownToWidgetProps,
   widgetPlaceholderProps,
   type WidgetDisplayProps,
 } from '@/services/widget/widgetViewModel';
 import { theme } from '@/lib/theme';
-import { DEFAULT_TRANSIT_AGENCY } from '@/lib/transitAgencies';
-import type { OnboardingDraft } from '@/store/commuteStore';
-import type { SavedCommute } from '@/types/commute';
 import { useCommuteStore } from '@/store/commuteStore';
-
-function draftToSaved(d: OnboardingDraft): SavedCommute | null {
-  if (
-    !d.stopId ||
-    !d.stopName ||
-    d.stopLat === undefined ||
-    d.stopLon === undefined ||
-    !d.routeId ||
-    !d.routeShortName ||
-    d.walkingMinutes === undefined ||
-    d.bufferMinutes === undefined
-  ) {
-    return null;
-  }
-  return {
-    agencyId: d.agencyId ?? DEFAULT_TRANSIT_AGENCY,
-    stopId: d.stopId,
-    stopName: d.stopName,
-    stopLat: d.stopLat,
-    stopLon: d.stopLon,
-    routeId: d.routeId,
-    routeShortName: d.routeShortName,
-    headsign: d.headsign ?? null,
-    walkingMinutes: d.walkingMinutes,
-    bufferMinutes: d.bufferMinutes,
-  };
-}
 
 const emptyPreview: WidgetDisplayProps = widgetPlaceholderProps;
 
@@ -72,41 +39,31 @@ export default function SummaryScreen() {
     if (!draftComplete && savedCommute) beginEditSetup();
   }, [draftComplete, savedCommute, beginEditSetup]);
 
+  const activeCommute = getActiveCommute(draft, savedCommute);
+
   useEffect(() => {
-    const c = draftToSaved(draft);
-    if (!c) return;
+    const commute = getActiveCommute(draft, savedCommute);
+    if (!commute) return;
     let alive = true;
-    (async () => {
-      const now = new Date();
+
+    const refresh = async () => {
       try {
-        const staticGtfs = await getStaticGtfsService(c.agencyId ?? agencyId);
-        const realtime = await realtimeGtfsService.fetchTripUpdatesForCommute(c, now);
-        const matchStopIds = await matchStopIdsForCommute(c);
-        const predictions = realtimeGtfsService.filterForCommute(
-          realtime,
-          c,
-          now.getTime(),
-          matchStopIds
-        );
-        const nextScheduled = await staticGtfs.getScheduledArrivalsForCommute(c, now, 8);
-        const mapsUrl = buildGoogleMapsCoordinateUrl(c.stopLat, c.stopLon);
-        const state = computeCountdownState({
-          commute: c,
-          now,
-          realtime,
-          predictions,
-          nextScheduled,
-          mapsUrl,
-        });
-        if (alive) setPreview(countdownToWidgetProps(state));
+        const props = await computeWidgetDisplayProps(commute);
+        if (!alive) return;
+        setPreview(props);
+        void refreshWidgetTimeline(commute);
       } catch {
         if (alive) setPreview(emptyPreview);
       }
-    })();
+    };
+
+    refresh();
+    const id = setInterval(refresh, 60_000);
     return () => {
       alive = false;
+      clearInterval(id);
     };
-  }, [draft]);
+  }, [draft, savedCommute]);
 
   /** All selected lines for the edit sheet (falls back to the primary route). */
   useEffect(() => {
@@ -137,7 +94,7 @@ export default function SummaryScreen() {
     };
   }, [draft.stopId, draft.selectedRouteIds, draft.routeId, agencyId]);
 
-  const saved = draftToSaved(draft) ?? savedCommute;
+  const saved = activeCommute;
 
   const onAddToHome = async () => {
     if (!saved) return;
