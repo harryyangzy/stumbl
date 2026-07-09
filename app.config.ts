@@ -23,7 +23,7 @@ const useNativeWidgets = process.env.EXPO_NO_WIDGETS !== '1';
 const config: ExpoConfig = {
   name: 'Stumbl',
   slug: 'stumbl',
-  version: '1.0.2',
+  version: '1.0.3',
   extra: {
     eas: {
       projectId: 'be0812db-a18b-44a9-8271-00d6b387f5a0',
@@ -48,7 +48,7 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'ca.stumbl.app',
-    buildNumber: '8',
+    buildNumber: '9',
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
       NSAppTransportSecurity: {
