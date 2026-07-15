@@ -20,6 +20,11 @@ export type CountdownState = {
   leaveMinutes?: number;
   /** Seconds until leave when under one minute. */
   leaveSeconds?: number;
+  /**
+   * Total seconds until the recommended leave moment (0 once it's time to go).
+   * Drives the Live Activity trigger + its auto-ticking countdown target.
+   */
+  leaveInSec?: number;
   /** Minutes until bus arrives (when known). */
   busMinutes?: number;
   /** Seconds until bus arrives (when known). */
@@ -149,9 +154,7 @@ export function computeCountdownState(params: {
   if (!chosen) {
     const nextSched = nextScheduled[0];
     const nextScheduledArrivalSec =
-      nextSched != null
-        ? Math.max(0, Math.ceil((nextSched.getTime() - nowMs) / 1000))
-        : undefined;
+      nextSched != null ? Math.max(0, Math.ceil((nextSched.getTime() - nowMs) / 1000)) : undefined;
     return {
       kind: 'no_realtime',
       nextScheduledArrivalSec,
@@ -168,7 +171,8 @@ export function computeCountdownState(params: {
   const busMinutes = Math.max(0, Math.ceil((arrivalMs - nowMs) / 60_000));
   const leaveSecRemaining = Math.max(0, Math.ceil((leaveAt - nowMs) / 1000));
   const leaveMinutes = leaveSecRemaining >= 60 ? Math.ceil(leaveSecRemaining / 60) : 0;
-  const leaveSeconds = leaveSecRemaining > 0 && leaveSecRemaining < 60 ? leaveSecRemaining : undefined;
+  const leaveSeconds =
+    leaveSecRemaining > 0 && leaveSecRemaining < 60 ? leaveSecRemaining : undefined;
   const nextBusArrivalMs =
     preds.length > 0 ? nextRealtimeArrivalAfter(preds, arrivalMs, nowMs) : null;
   const nextBusArrivalSec =
@@ -202,6 +206,7 @@ export function computeCountdownState(params: {
     return {
       kind: 'leave_now',
       leaveMinutes: 0,
+      leaveInSec: 0,
       busMinutes,
       busArrivalSec,
       ...sharedNext,
@@ -216,6 +221,7 @@ export function computeCountdownState(params: {
     kind: 'leave_in',
     leaveMinutes,
     leaveSeconds,
+    leaveInSec: leaveSecRemaining,
     busMinutes,
     busArrivalSec,
     ...sharedNext,

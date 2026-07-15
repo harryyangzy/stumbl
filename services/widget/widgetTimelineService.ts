@@ -1,14 +1,15 @@
 import { loadStumblWidget } from '@/lib/stumblWidgetLoader';
 import { widgetMapsUrlBridge } from '@/lib/widgetBridge';
 import { DEFAULT_TRANSIT_AGENCY } from '@/lib/transitAgencies';
-import { computeCountdownState } from '@/services/countdown/countdownService';
+import { computeCountdownState, type CountdownState } from '@/services/countdown/countdownService';
+import { syncLiveActivity } from '@/services/liveActivity/liveActivityService';
 import { buildGoogleMapsCoordinateUrl } from '@/services/maps/googleMaps';
 import { getStaticGtfsService } from '@/services/gtfs/staticGtfsService';
-import { realtimeGtfsService, matchStopIdsForCommute } from '@/services/realtime/realtimeGtfsService';
 import {
-  countdownToWidgetProps,
-  type WidgetDisplayProps,
-} from '@/services/widget/widgetViewModel';
+  realtimeGtfsService,
+  matchStopIdsForCommute,
+} from '@/services/realtime/realtimeGtfsService';
+import { countdownToWidgetProps, type WidgetDisplayProps } from '@/services/widget/widgetViewModel';
 import type { RealtimeFetchResult } from '@/types/realtime';
 import type { SavedCommute } from '@/types/commute';
 
@@ -40,13 +41,17 @@ function emptyProps(now: Date): WidgetDisplayProps {
 async function buildWidgetTimelineEntries(
   commute: SavedCommute,
   now: Date
-): Promise<{ date: Date; props: WidgetDisplayProps }[]> {
+): Promise<{
+  entries: { date: Date; props: WidgetDisplayProps }[];
+  nowState: CountdownState | null;
+}> {
   const mapsUrl = buildGoogleMapsCoordinateUrl(commute.stopLat, commute.stopLon);
   const staticGtfs = await getStaticGtfsService(commute.agencyId ?? DEFAULT_TRANSIT_AGENCY);
   const realtime = await realtimeGtfsService.fetchTripUpdatesForCommute(commute, now);
   const matchStopIds = await matchStopIdsForCommute(commute);
 
   const entries: { date: Date; props: WidgetDisplayProps }[] = [];
+  let nowState: CountdownState | null = null;
   for (let i = 0; i <= TIMELINE_HORIZON_MIN; i++) {
     const at = new Date(now.getTime() + i * 60_000);
     /**
@@ -77,10 +82,11 @@ async function buildWidgetTimelineEntries(
       nextScheduled,
       mapsUrl,
     });
+    if (i === 0) nowState = state;
     entries.push({ date: at, props: countdownToWidgetProps(state) });
   }
 
-  return entries;
+  return { entries, nowState };
 }
 
 /**
@@ -98,7 +104,7 @@ export async function computeWidgetDisplayProps(
   const mapsUrl = buildGoogleMapsCoordinateUrl(commute.stopLat, commute.stopLon);
 
   try {
-    const entries = await buildWidgetTimelineEntries(commute, now);
+    const { entries } = await buildWidgetTimelineEntries(commute, now);
     return entries[0]?.props ?? emptyProps(now);
   } catch {
     return countdownToWidgetProps(
@@ -132,6 +138,8 @@ export async function refreshWidgetTimeline(
     widgetMapsUrlBridge.current = '';
     const empty = emptyProps(now);
     widget.updateSnapshot(empty);
+    // Tear down any lingering "time to leave" Live Activity.
+    void syncLiveActivity(null);
     return empty;
   }
 
@@ -139,8 +147,10 @@ export async function refreshWidgetTimeline(
   widgetMapsUrlBridge.current = mapsUrl;
 
   try {
-    const entries = await buildWidgetTimelineEntries(commute, now);
+    const { entries, nowState } = await buildWidgetTimelineEntries(commute, now);
     widget.updateTimeline(entries);
+    // Drive the Dynamic Island / Live Activity from the current-moment state.
+    void syncLiveActivity(nowState);
     return entries[0]?.props ?? null;
   } catch {
     const fallback = countdownToWidgetProps(

@@ -49,8 +49,41 @@ export function addPushToStartTokenListener(_listener: (event: unknown) => void)
   return { remove: () => {} };
 }
 
-export function createLiveActivity(_name: string, _liveActivity: unknown): unknown {
-  return {};
+type StubLiveActivityInstance = {
+  update(_props: unknown): Promise<void>;
+  end(_dismissalPolicy?: unknown, _props?: unknown, _contentDate?: unknown): Promise<void>;
+  getPushToken(): Promise<string | null>;
+  addPushTokenListener(_listener: (event: unknown) => void): { remove: () => void };
+};
+
+function createStubLiveActivityInstance(): StubLiveActivityInstance {
+  return {
+    async update() {},
+    async end() {},
+    async getPushToken() {
+      return null;
+    },
+    addPushTokenListener() {
+      return { remove: () => {} };
+    },
+  };
+}
+
+export function createLiveActivity(
+  _name: string,
+  _liveActivity: unknown
+): {
+  start(_props: unknown, _url?: string): StubLiveActivityInstance;
+  getInstances(): StubLiveActivityInstance[];
+} {
+  return {
+    start() {
+      return createStubLiveActivityInstance();
+    },
+    getInstances() {
+      return [];
+    },
+  };
 }
 
 export function after(date: Date): { after: Date } {
