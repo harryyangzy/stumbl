@@ -8,7 +8,8 @@ import {
 } from '@/services/widget/widgetViewModel';
 
 type Props = {
-  model: WidgetDisplayProps;
+  model: WidgetDisplayProps | null;
+  loading?: boolean;
 };
 
 /** Figma widget frame (node 565:28): 169×169 with hero 117pt + footer 52pt. */
@@ -16,7 +17,19 @@ const CARD = 169;
 const HERO = 117;
 const FOOTER = CARD - HERO;
 
-export function WidgetPreviewCard({ model }: Props) {
+export function WidgetPreviewCard({ model, loading = false }: Props) {
+  if (loading || !model) {
+    return (
+      <View style={styles.card}>
+        <View style={styles.hero}>
+          <View style={styles.countdown}>
+            <Text style={styles.big}>…</Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   const unitLabel = getWidgetPrimaryUnitLabel(model);
   const footerTitle = getWidgetFooterTitle(model);
   const footerSubtitle = model.footerLabel;

@@ -8,7 +8,7 @@ import { useCommuteStore } from '@/store/commuteStore';
 /**
  * Keeps the Home Screen widget timeline fresh: on launch, when the active commute
  * changes (saved commute or in-progress draft), when the app returns to the
- * foreground, and every minute while open.
+ * foreground, and every 30s while open.
  * The pushed timeline covers the next hour, so the widget keeps counting down
  * after the app is backgrounded or closed.
  */
@@ -32,7 +32,7 @@ export function useCommuteCountdownRefresh() {
     };
 
     refresh();
-    const id = setInterval(refresh, 60_000);
+    const id = setInterval(refresh, 30_000);
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') refresh();
     });

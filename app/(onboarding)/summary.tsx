@@ -12,13 +12,12 @@ import { refreshWidgetTimeline, computeWidgetDisplayProps } from '@/services/wid
 import { getStaticGtfsService } from '@/services/gtfs/staticGtfsService';
 import { useTransitAgencyId } from '@/hooks/useTransitAgencyId';
 import {
-  widgetPlaceholderProps,
   type WidgetDisplayProps,
 } from '@/services/widget/widgetViewModel';
 import { theme } from '@/lib/theme';
 import { useCommuteStore } from '@/store/commuteStore';
 
-const emptyPreview: WidgetDisplayProps = widgetPlaceholderProps;
+const REFRESH_MS = 30_000;
 
 export default function SummaryScreen() {
   const router = useRouter();
@@ -29,7 +28,7 @@ export default function SummaryScreen() {
   const clearSaved = useCommuteStore((s) => s.clearSaved);
   const agencyId = useTransitAgencyId();
 
-  const [preview, setPreview] = useState<WidgetDisplayProps>(emptyPreview);
+  const [preview, setPreview] = useState<WidgetDisplayProps | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [sheetLines, setSheetLines] = useState<EditSheetLine[]>([]);
 
@@ -53,12 +52,12 @@ export default function SummaryScreen() {
         setPreview(props);
         void refreshWidgetTimeline(commute);
       } catch {
-        if (alive) setPreview(emptyPreview);
+        if (alive) setPreview(null);
       }
     };
 
     refresh();
-    const id = setInterval(refresh, 60_000);
+    const id = setInterval(refresh, REFRESH_MS);
     return () => {
       alive = false;
       clearInterval(id);
@@ -176,7 +175,7 @@ export default function SummaryScreen() {
           </Pressable>
         </View>
         <View style={styles.content}>
-          <WidgetPreviewCard model={preview} />
+          <WidgetPreviewCard model={preview} loading={preview === null} />
           <View style={styles.stopBlock}>
             <Text style={styles.stopName}>{saved.stopName}</Text>
             <Text style={styles.stopRole}>Primary Stop</Text>

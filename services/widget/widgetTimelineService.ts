@@ -38,22 +38,24 @@ function emptyProps(now: Date): WidgetDisplayProps {
   );
 }
 
-async function buildWidgetTimelineEntries(
-  commute: SavedCommute,
-  now: Date
-): Promise<{
+async function buildWidgetTimelineEntries(commute: SavedCommute): Promise<{
   entries: { date: Date; props: WidgetDisplayProps }[];
   nowState: CountdownState | null;
 }> {
   const mapsUrl = buildGoogleMapsCoordinateUrl(commute.stopLat, commute.stopLon);
-  const staticGtfs = await getStaticGtfsService(commute.agencyId ?? DEFAULT_TRANSIT_AGENCY);
-  const realtime = await realtimeGtfsService.fetchTripUpdatesForCommute(commute, now);
-  const matchStopIds = await matchStopIdsForCommute(commute);
+  const agencyId = commute.agencyId ?? DEFAULT_TRANSIT_AGENCY;
+  const staticGtfs = await getStaticGtfsService(agencyId);
+  const [realtime, matchStopIds] = await Promise.all([
+    realtimeGtfsService.fetchTripUpdatesForCommute(commute, new Date()),
+    matchStopIdsForCommute(commute),
+  ]);
+  /** Anchor after network + GTFS work so entry 0 matches wall-clock when pushed. */
+  const timelineStart = new Date();
 
   const entries: { date: Date; props: WidgetDisplayProps }[] = [];
   let nowState: CountdownState | null = null;
   for (let i = 0; i <= TIMELINE_HORIZON_MIN; i++) {
-    const at = new Date(now.getTime() + i * 60_000);
+    const at = new Date(timelineStart.getTime() + i * 60_000);
     /**
      * Data fetched now is the best information for the whole horizon; pin the feed
      * timestamp to each entry so the staleness check doesn't discard predictions
@@ -70,10 +72,14 @@ async function buildWidgetTimelineEntries(
       matchStopIds
     );
     /**
-     * Static timetable is always fetched for the "no buses" footer even when
-     * USE_SCHEDULE_FALLBACK is off — live data alone drives the main countdown.
+     * Static timetable is only needed when live predictions are empty (footer
+     * for "no buses"). Skipping it when we have live data avoids 60+ GTFS scans
+     * per refresh — that was slowing GRT updates by several seconds.
      */
-    const nextScheduled = await staticGtfs.getScheduledArrivalsForCommute(commute, at, 8);
+    const nextScheduled =
+      predictions.length === 0
+        ? await staticGtfs.getScheduledArrivalsForCommute(commute, at, 8)
+        : [];
     const state = computeCountdownState({
       commute,
       now: at,
@@ -104,7 +110,7 @@ export async function computeWidgetDisplayProps(
   const mapsUrl = buildGoogleMapsCoordinateUrl(commute.stopLat, commute.stopLon);
 
   try {
-    const { entries } = await buildWidgetTimelineEntries(commute, now);
+    const { entries } = await buildWidgetTimelineEntries(commute);
     return entries[0]?.props ?? emptyProps(now);
   } catch {
     return countdownToWidgetProps(
@@ -132,9 +138,8 @@ export async function refreshWidgetTimeline(
   const widget = await loadStumblWidget();
   if (!widget) return null;
 
-  const now = new Date();
-
   if (!commute) {
+    const now = new Date();
     widgetMapsUrlBridge.current = '';
     const empty = emptyProps(now);
     widget.updateSnapshot(empty);
@@ -147,12 +152,17 @@ export async function refreshWidgetTimeline(
   widgetMapsUrlBridge.current = mapsUrl;
 
   try {
-    const { entries, nowState } = await buildWidgetTimelineEntries(commute, now);
+    const { entries, nowState } = await buildWidgetTimelineEntries(commute);
+    const snapshot = entries[0]?.props;
+    if (snapshot) {
+      widget.updateSnapshot(snapshot);
+    }
     widget.updateTimeline(entries);
     // Drive the Dynamic Island / Live Activity from the current-moment state.
     void syncLiveActivity(nowState);
-    return entries[0]?.props ?? null;
+    return snapshot ?? null;
   } catch {
+    const now = new Date();
     const fallback = countdownToWidgetProps(
       computeCountdownState({
         commute,
