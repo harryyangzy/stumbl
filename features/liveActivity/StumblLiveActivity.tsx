@@ -1,10 +1,11 @@
-import { HStack, Image, Spacer, Text, VStack, ZStack } from '@expo/ui/swift-ui';
+import { HStack, Image, Rectangle, Spacer, Text, VStack, ZStack } from '@expo/ui/swift-ui';
 import {
   background,
   cornerRadius,
   font,
   foregroundStyle,
   frame,
+  offset,
   padding,
 } from '@expo/ui/swift-ui/modifiers';
 import {
@@ -33,7 +34,8 @@ function StumblLiveActivityView(
    * IMPORTANT: the renderer applies a Text node's modifier array twice, so Text
    * may only carry idempotent modifiers (font / foregroundStyle). All layout
    * modifiers (padding, background, frame, cornerRadius) must live on wrapper
-   * stacks, which apply them once. Keep this in sync with StumblWidget.tsx.
+   * stacks, which apply them once. Keep lock-screen banner in sync with
+   * `features/widget/StumblWidget.tsx`.
    */
   const props: LiveActivityDisplayProps = {
     routeBadge: '2B',
@@ -49,13 +51,32 @@ function StumblLiveActivityView(
   const green = '#148240';
   const cream = '#FBF2E5';
   const ink = '#000000';
+  const white = '#FFFFFF';
 
   const isNow = props.stage === 'now';
-  // Counting down to "leave now" while there's still time, then to the bus.
   const targetDate = new Date(isNow ? props.busAtMs : props.leaveAtMs);
-  const leadLabel = isNow ? 'Leave now' : 'Time to leave';
+  const msRemaining = Math.max(0, targetDate.getTime() - Date.now());
   const badge = props.routeBadge || '—';
-  const numberFont = font({ family: 'Monotalic-NarrowMedium', size: 40 });
+  const headsign = props.headsign || badge;
+
+  function primaryUnitLabel(): string {
+    if (isNow) return 'to bus';
+    const sec = Math.ceil(msRemaining / 1000);
+    if (sec < 60) return sec === 1 ? 'second' : 'seconds';
+    const min = Math.ceil(sec / 60);
+    return min === 1 ? 'minute' : 'minutes';
+  }
+
+  function footerTitle(): string {
+    return isNow ? 'leave now' : 'time to leave';
+  }
+
+  function footerSubtitle(): string {
+    return headsign ? `for ${headsign}` : '';
+  }
+
+  const numberFont = font({ family: 'Monotalic-NarrowMedium', size: 44 });
+  const unitFont = font({ family: 'Parabolica-Medium', size: 14 });
   const labelFont = font({ family: 'Parabolica-Medium', size: 14 });
   const smallFont = font({ family: 'Parabolica-Regular', size: 12 });
 
@@ -68,46 +89,75 @@ function StumblLiveActivityView(
     </ZStack>
   );
 
-  const compactTimer = (color: string) => (
+  const compactTimer = (color: string, size = 15) => (
     <Text
       date={targetDate}
       dateStyle="timer"
-      modifiers={[font({ family: 'Monotalic-NarrowMedium', size: 15 }), foregroundStyle(color)]}
+      modifiers={[font({ family: 'Monotalic-NarrowMedium', size }), foregroundStyle(color)]}
     />
   );
 
-  return {
-    /**
-     * Lock Screen / Notification Center banner — a branded gold card mirroring
-     * the Home Screen widget so the countdown reads the same everywhere.
-     */
-    banner: (
-      <HStack
-        alignment="center"
-        modifiers={[
-          background(gold),
-          cornerRadius(20),
-          padding({ horizontal: 18, vertical: 14 }),
-          frame({ maxWidth: Infinity }),
-        ]}>
-        <VStack alignment="leading" spacing={2}>
-          <Text modifiers={[labelFont, foregroundStyle(ink)]}>{leadLabel}</Text>
-          <Text
-            date={targetDate}
-            dateStyle="timer"
-            modifiers={[numberFont, foregroundStyle(ink)]}
-          />
-        </VStack>
+  /**
+   * Lock Screen banner — same structure as the Home Screen widget: big timer,
+   * unit label beneath it, route badge top-trailing, white footer band.
+   */
+  const lockScreenCard = (
+    <ZStack
+      alignment="topLeading"
+      modifiers={[
+        background(gold),
+        cornerRadius(20),
+        frame({ maxWidth: Infinity, minHeight: 88, alignment: 'topLeading' }),
+      ]}>
+      <VStack spacing={0} modifiers={[padding({ leading: 16, top: 8 })]}>
+        <Text date={targetDate} dateStyle="timer" modifiers={[numberFont, foregroundStyle(ink)]} />
+        <ZStack modifiers={[offset({ y: -6 })]}>
+          <Text modifiers={[unitFont, foregroundStyle(ink)]}>{primaryUnitLabel()}</Text>
+        </ZStack>
+      </VStack>
+
+      {badge ? (
+        <ZStack
+          modifiers={[
+            padding({ horizontal: 4 }),
+            background(green),
+            cornerRadius(6),
+            padding({ top: 12, trailing: 14 }),
+            frame({ maxWidth: Infinity, maxHeight: Infinity, alignment: 'topTrailing' }),
+          ]}>
+          <Text modifiers={[font({ family: 'Parabolica-Regular', size: 14 }), foregroundStyle(cream)]}>
+            {badge}
+          </Text>
+        </ZStack>
+      ) : null}
+
+      <VStack
+        spacing={0}
+        modifiers={[frame({ maxWidth: Infinity, maxHeight: Infinity, alignment: 'bottomLeading' })]}>
         <Spacer />
-        <VStack alignment="trailing" spacing={6}>
-          {badgePill}
-          <HStack alignment="center" spacing={4}>
-            <Image systemName="figure.walk" size={13} color={ink} />
-            <Text modifiers={[smallFont, foregroundStyle(ink)]}>{props.headsign}</Text>
-          </HStack>
-        </VStack>
-      </HStack>
-    ),
+        <Rectangle modifiers={[foregroundStyle(ink), frame({ maxWidth: Infinity, height: 1 })]} />
+        <HStack
+          alignment="center"
+          modifiers={[
+            background(white),
+            padding({ horizontal: 16, vertical: 9 }),
+            frame({ maxWidth: Infinity }),
+          ]}>
+          <Text modifiers={[smallFont, foregroundStyle(ink)]}>{footerTitle()}</Text>
+          {footerSubtitle() ? (
+            <>
+              <Spacer />
+              <Text modifiers={[smallFont, foregroundStyle(ink)]}>{footerSubtitle()}</Text>
+            </>
+          ) : null}
+        </HStack>
+      </VStack>
+    </ZStack>
+  );
+
+  return {
+    banner: lockScreenCard,
+    bannerSmall: lockScreenCard,
 
     // Dynamic Island — collapsed
     compactLeading: (
@@ -121,23 +171,17 @@ function StumblLiveActivityView(
     // Dynamic Island — expanded (long press)
     expandedLeading: <HStack modifiers={[padding({ leading: 4 })]}>{badgePill}</HStack>,
     expandedTrailing: (
-      <HStack modifiers={[padding({ trailing: 4 })]}>
-        <Text
-          date={targetDate}
-          dateStyle="timer"
-          modifiers={[font({ family: 'Monotalic-NarrowMedium', size: 22 }), foregroundStyle(cream)]}
-        />
-      </HStack>
+      <HStack modifiers={[padding({ trailing: 4 })]}>{compactTimer(cream, 22)}</HStack>
     ),
     expandedCenter: (
       <VStack alignment="center" spacing={2}>
-        <Text modifiers={[labelFont, foregroundStyle(cream)]}>{leadLabel}</Text>
+        <Text modifiers={[labelFont, foregroundStyle(cream)]}>{footerTitle()}</Text>
       </VStack>
     ),
     expandedBottom: (
       <HStack alignment="center" spacing={6} modifiers={[padding({ top: 2 })]}>
         <Image systemName="figure.walk" size={13} color={cream} />
-        <Text modifiers={[smallFont, foregroundStyle(cream)]}>{props.headsign}</Text>
+        <Text modifiers={[smallFont, foregroundStyle(cream)]}>{headsign}</Text>
       </HStack>
     ),
   };

@@ -58,6 +58,11 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
   const footerTitle = getFooterTitle(props);
   const footerSubtitle = getFooterSubtitle(props);
   const showFooter = Boolean(footerTitle || footerSubtitle);
+  const countdownTargetMs = props.countdownTargetMs;
+  const useLiveCountdown =
+    countdownTargetMs != null && countdownTargetMs > Date.now() - 1000;
+  const countdownDate =
+    countdownTargetMs != null ? new Date(countdownTargetMs) : new Date();
 
   /**
    * Figma frame (node 565:28) is a 169×169 canvas but systemSmall widgets
@@ -72,8 +77,9 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
    * background, frame) must live on wrapper stacks, which apply them once.
    */
   /** Figma 74pt number on a 169pt canvas → ~65pt on systemSmall (148pt). */
-  const numberSize =
-    props.primaryValue.length > 2 || props.primaryValue === '—' || props.primaryValue === '…'
+  const numberSize = useLiveCountdown
+    ? 48
+    : props.primaryValue.length > 2 || props.primaryValue === '—' || props.primaryValue === '…'
       ? 48
       : 65;
   const unitSize = 16;
@@ -88,13 +94,24 @@ function StumblWidgetView(rawProps: Partial<WidgetDisplayProps>, _env: WidgetEnv
       ]}>
       {/* Countdown block — Figma x15 */}
       <VStack spacing={0} modifiers={[offset({ x: 15, y: 6 })]}>
-        <Text
-          modifiers={[
-            font({ family: 'Monotalic-NarrowMedium', size: numberSize }),
-            foregroundStyle(ink),
-          ]}>
-          {props.primaryValue}
-        </Text>
+        {useLiveCountdown ? (
+          <Text
+            date={countdownDate}
+            dateStyle="timer"
+            modifiers={[
+              font({ family: 'Monotalic-NarrowMedium', size: numberSize }),
+              foregroundStyle(ink),
+            ]}
+          />
+        ) : (
+          <Text
+            modifiers={[
+              font({ family: 'Monotalic-NarrowMedium', size: numberSize }),
+              foregroundStyle(ink),
+            ]}>
+            {props.primaryValue}
+          </Text>
+        )}
         <ZStack modifiers={[offset({ y: -11 })]}>
           <Text modifiers={[font({ family: 'Parabolica-Medium', size: unitSize }), foregroundStyle(ink)]}>
             {primaryUnitLabel}

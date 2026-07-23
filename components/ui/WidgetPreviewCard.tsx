@@ -1,9 +1,11 @@
+import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { theme } from '@/lib/theme';
 import {
   getWidgetFooterTitle,
   getWidgetPrimaryUnitLabel,
+  widgetCountdownSecondsRemaining,
   type WidgetDisplayProps,
 } from '@/services/widget/widgetViewModel';
 
@@ -17,7 +19,33 @@ const CARD = 169;
 const HERO = 117;
 const FOOTER = CARD - HERO;
 
+function formatPreviewPrimaryValue(model: WidgetDisplayProps, nowMs: number): string {
+  const remaining = widgetCountdownSecondsRemaining(model, nowMs);
+  if (remaining == null) return model.primaryValue;
+  if (remaining >= 60) {
+    return String(Math.max(0, Math.ceil(remaining / 60))).padStart(2, '0');
+  }
+  return String(remaining).padStart(2, '0');
+}
+
+function previewUnitLabel(model: WidgetDisplayProps, nowMs: number): string {
+  const remaining = widgetCountdownSecondsRemaining(model, nowMs);
+  if (remaining != null && remaining < 60) {
+    return remaining === 1 ? 'second' : 'seconds';
+  }
+  return getWidgetPrimaryUnitLabel(model);
+}
+
 export function WidgetPreviewCard({ model, loading = false }: Props) {
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (model?.countdownTargetMs == null) return;
+    setNowMs(Date.now());
+    const id = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [model?.countdownTargetMs]);
+
   if (loading || !model) {
     return (
       <View style={styles.card}>
@@ -30,7 +58,8 @@ export function WidgetPreviewCard({ model, loading = false }: Props) {
     );
   }
 
-  const unitLabel = getWidgetPrimaryUnitLabel(model);
+  const primaryValue = formatPreviewPrimaryValue(model, nowMs);
+  const unitLabel = previewUnitLabel(model, nowMs);
   const footerTitle = getWidgetFooterTitle(model);
   const footerSubtitle = model.footerLabel;
 
@@ -38,7 +67,7 @@ export function WidgetPreviewCard({ model, loading = false }: Props) {
     <View style={styles.card}>
       <View style={styles.hero}>
         <View style={styles.countdown}>
-          <Text style={styles.big}>{model.primaryValue}</Text>
+          <Text style={styles.big}>{primaryValue}</Text>
           <Text style={styles.unit}>{unitLabel}</Text>
         </View>
         {model.routeBadge ? <Text style={styles.routeBadge}>{model.routeBadge}</Text> : null}

@@ -13,6 +13,11 @@ export type WidgetDisplayProps = {
   state: 'leave_in' | 'fallback' | 'empty';
   /** Open in Maps when the widget supports a URL (app + widget bridge). */
   mapsUrl: string;
+  /**
+   * When set, the Home Screen widget renders a native SwiftUI timer to this
+   * instant so the countdown ticks every second without per-second timeline entries.
+   */
+  countdownTargetMs?: number;
 };
 
 export const widgetPlaceholderProps: WidgetDisplayProps = {
@@ -175,6 +180,27 @@ function followingFooter(state: CountdownState, badge: string) {
   });
 }
 
+/** Absolute epoch ms the widget timer should count down to, if any. */
+export function widgetCountdownTargetMs(state: CountdownState, now: Date): number | undefined {
+  const nowMs = now.getTime();
+  if (state.kind === 'leave_in' && state.leaveInSec != null && state.leaveInSec > 0) {
+    return nowMs + state.leaveInSec * 1000;
+  }
+  if (state.kind === 'leave_now' && state.busArrivalSec != null && state.busArrivalSec > 0) {
+    return nowMs + state.busArrivalSec * 1000;
+  }
+  return undefined;
+}
+
+/** Remaining seconds for in-app preview ticking (mirrors widget timer semantics). */
+export function widgetCountdownSecondsRemaining(
+  props: Pick<WidgetDisplayProps, 'countdownTargetMs'>,
+  nowMs = Date.now()
+): number | null {
+  if (props.countdownTargetMs == null) return null;
+  return Math.max(0, Math.ceil((props.countdownTargetMs - nowMs) / 1000));
+}
+
 function primaryLeaveDisplay(state: CountdownState): { primaryValue: string; unitLabel: string } {
   const b = state.busMinutes;
   const busHint = state.realtimeOk && b != null && b > 0 ? ` · Bus in ${b} min` : '';
@@ -193,9 +219,10 @@ function primaryLeaveDisplay(state: CountdownState): { primaryValue: string; uni
   };
 }
 
-export function countdownToWidgetProps(state: CountdownState): WidgetDisplayProps {
+export function countdownToWidgetProps(state: CountdownState, now = new Date()): WidgetDisplayProps {
   const badge = state.routeShort || '—';
   const head = state.headsign || badge;
+  const countdownTargetMs = widgetCountdownTargetMs(state, now);
 
   switch (state.kind) {
     case 'no_setup':
@@ -251,6 +278,7 @@ export function countdownToWidgetProps(state: CountdownState): WidgetDisplayProp
         footerLabel: footer.subtitle,
         state: 'leave_in',
         mapsUrl: state.mapsUrl,
+        countdownTargetMs,
       };
     }
     case 'leave_in': {
@@ -265,6 +293,7 @@ export function countdownToWidgetProps(state: CountdownState): WidgetDisplayProp
         footerLabel: footer.subtitle,
         state: 'leave_in',
         mapsUrl: state.mapsUrl,
+        countdownTargetMs,
       };
     }
     default:

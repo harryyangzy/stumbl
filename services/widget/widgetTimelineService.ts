@@ -34,7 +34,8 @@ function emptyProps(now: Date): WidgetDisplayProps {
       predictions: [],
       nextScheduled: [],
       mapsUrl: '',
-    })
+    }),
+    now
   );
 }
 
@@ -89,7 +90,7 @@ async function buildWidgetTimelineEntries(commute: SavedCommute): Promise<{
       mapsUrl,
     });
     if (i === 0) nowState = state;
-    entries.push({ date: at, props: countdownToWidgetProps(state) });
+    entries.push({ date: at, props: countdownToWidgetProps(state, at) });
   }
 
   return { entries, nowState };
@@ -121,7 +122,8 @@ export async function computeWidgetDisplayProps(
         predictions: [],
         nextScheduled: [],
         mapsUrl,
-      })
+      }),
+      now
     );
   }
 }
@@ -171,7 +173,8 @@ export async function refreshWidgetTimeline(
         predictions: [],
         nextScheduled: [],
         mapsUrl,
-      })
+      }),
+      now
     );
     widget.updateSnapshot(fallback);
     return fallback;
