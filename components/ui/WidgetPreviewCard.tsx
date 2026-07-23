@@ -22,9 +22,6 @@ const FOOTER = CARD - HERO;
 function formatPreviewPrimaryValue(model: WidgetDisplayProps, nowMs: number): string {
   const remaining = widgetCountdownSecondsRemaining(model, nowMs);
   if (remaining == null) return model.primaryValue;
-  if (remaining >= 60) {
-    return String(Math.max(0, Math.ceil(remaining / 60))).padStart(2, '0');
-  }
   return String(remaining).padStart(2, '0');
 }
 

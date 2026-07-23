@@ -180,13 +180,26 @@ function followingFooter(state: CountdownState, badge: string) {
   });
 }
 
+/** Only tick per-second below one minute; at 60+ show static whole minutes. */
+export const WIDGET_LIVE_COUNTDOWN_THRESHOLD_SEC = 60;
+
 /** Absolute epoch ms the widget timer should count down to, if any. */
 export function widgetCountdownTargetMs(state: CountdownState, now: Date): number | undefined {
   const nowMs = now.getTime();
-  if (state.kind === 'leave_in' && state.leaveInSec != null && state.leaveInSec > 0) {
+  if (
+    state.kind === 'leave_in' &&
+    state.leaveInSec != null &&
+    state.leaveInSec > 0 &&
+    state.leaveInSec < WIDGET_LIVE_COUNTDOWN_THRESHOLD_SEC
+  ) {
     return nowMs + state.leaveInSec * 1000;
   }
-  if (state.kind === 'leave_now' && state.busArrivalSec != null && state.busArrivalSec > 0) {
+  if (
+    state.kind === 'leave_now' &&
+    state.busArrivalSec != null &&
+    state.busArrivalSec > 0 &&
+    state.busArrivalSec < WIDGET_LIVE_COUNTDOWN_THRESHOLD_SEC
+  ) {
     return nowMs + state.busArrivalSec * 1000;
   }
   return undefined;

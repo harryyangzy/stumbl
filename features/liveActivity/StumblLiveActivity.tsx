@@ -56,14 +56,21 @@ function StumblLiveActivityView(
   const isNow = props.stage === 'now';
   const targetDate = new Date(isNow ? props.busAtMs : props.leaveAtMs);
   const msRemaining = Math.max(0, targetDate.getTime() - Date.now());
+  const secRemaining = Math.ceil(msRemaining / 1000);
+  const useLiveTimer = secRemaining > 0 && secRemaining < 60;
   const badge = props.routeBadge || '—';
   const headsign = props.headsign || badge;
 
+  function staticPrimaryValue(): string {
+    if (secRemaining <= 0) return '00';
+    if (secRemaining >= 60) return String(Math.ceil(secRemaining / 60)).padStart(2, '0');
+    return String(secRemaining).padStart(2, '0');
+  }
+
   function primaryUnitLabel(): string {
-    if (isNow) return 'to bus';
-    const sec = Math.ceil(msRemaining / 1000);
-    if (sec < 60) return sec === 1 ? 'second' : 'seconds';
-    const min = Math.ceil(sec / 60);
+    if (isNow) return secRemaining < 60 ? 'to bus' : 'minutes to bus';
+    if (secRemaining < 60) return secRemaining === 1 ? 'second' : 'seconds';
+    const min = Math.ceil(secRemaining / 60);
     return min === 1 ? 'minute' : 'minutes';
   }
 
@@ -89,13 +96,19 @@ function StumblLiveActivityView(
     </ZStack>
   );
 
-  const compactTimer = (color: string, size = 15) => (
-    <Text
-      date={targetDate}
-      dateStyle="timer"
-      modifiers={[font({ family: 'Monotalic-NarrowMedium', size }), foregroundStyle(color)]}
-    />
-  );
+  const compactTimer = (color: string, size = 15) =>
+    useLiveTimer ? (
+      <Text
+        date={targetDate}
+        dateStyle="timer"
+        modifiers={[font({ family: 'Monotalic-NarrowMedium', size }), foregroundStyle(color)]}
+      />
+    ) : (
+      <Text
+        modifiers={[font({ family: 'Monotalic-NarrowMedium', size }), foregroundStyle(color)]}>
+        {staticPrimaryValue()}
+      </Text>
+    );
 
   /**
    * Lock Screen banner — same structure as the Home Screen widget: big timer,
@@ -110,7 +123,11 @@ function StumblLiveActivityView(
         frame({ maxWidth: Infinity, minHeight: 88, alignment: 'topLeading' }),
       ]}>
       <VStack spacing={0} modifiers={[padding({ leading: 16, top: 8 })]}>
-        <Text date={targetDate} dateStyle="timer" modifiers={[numberFont, foregroundStyle(ink)]} />
+        {useLiveTimer ? (
+          <Text date={targetDate} dateStyle="timer" modifiers={[numberFont, foregroundStyle(ink)]} />
+        ) : (
+          <Text modifiers={[numberFont, foregroundStyle(ink)]}>{staticPrimaryValue()}</Text>
+        )}
         <ZStack modifiers={[offset({ y: -6 })]}>
           <Text modifiers={[unitFont, foregroundStyle(ink)]}>{primaryUnitLabel()}</Text>
         </ZStack>
