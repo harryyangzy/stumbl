@@ -178,6 +178,9 @@ export default function StopScreen() {
       headsign: undefined,
       selectedRouteIds: undefined,
     });
+    void getStaticGtfsService(agencyId).then((svc) => {
+      svc.routesServingStop(s.stopId);
+    });
   };
 
   const onPickAddress = async (a: AddressResult) => {
@@ -193,9 +196,12 @@ export default function StopScreen() {
   const goNext = () => {
     if (!selectedId) return;
     if (isEdit) {
-      if (savedCommute) commitDraft();
       router.back();
+      if (savedCommute) commitDraft();
     } else {
+      void getStaticGtfsService(agencyId).then((svc) => {
+        svc.routesServingStop(selectedId);
+      });
       router.push('/(onboarding)/line');
     }
   };

@@ -99,8 +99,8 @@ export default function LineScreen() {
   const onNext = () => {
     if (selectedIds.length === 0) return;
     if (isEdit) {
-      if (savedCommute) commitDraft();
       router.back();
+      if (savedCommute) commitDraft();
     } else {
       router.push('/(onboarding)/walking');
     }

@@ -22,6 +22,12 @@ import type { SavedCommute } from '@/types/commute';
  */
 const TIMELINE_HORIZON_MIN = 60;
 
+/** Widget renders static primary/unit text; strip timer target so it never switches to MM:SS. */
+function timelineWidgetProps(props: WidgetDisplayProps): WidgetDisplayProps {
+  const { countdownTargetMs: _removed, ...rest } = props;
+  return rest;
+}
+
 const emptyRealtime: RealtimeFetchResult = {
   predictions: [],
   feedTimestampSec: null,
@@ -113,9 +119,18 @@ async function buildWidgetTimelineEntries(commute: SavedCommute): Promise<{
   const ctx = await loadCountdownContext(commute, timelineStart);
 
   const entries: { date: Date; props: WidgetDisplayProps }[] = [];
-  let nowState: CountdownState | null = null;
-  for (let i = 0; i <= TIMELINE_HORIZON_MIN; i++) {
-    const at = new Date(timelineStart.getTime() + i * 60_000);
+  const predictionsNow = realtimeGtfsService.filterForCommute(
+    ctx.realtime,
+    commute,
+    timelineStart.getTime(),
+    ctx.matchStopIds
+  );
+  const nextScheduledNow = predictionsNow.length === 0 ? ctx.fallbackSchedule : [];
+  const nowState = countdownStateAt(commute, timelineStart, ctx, nextScheduledNow);
+  const nowProps = countdownToWidgetProps(nowState, timelineStart);
+  const targetMs = nowProps.countdownTargetMs;
+
+  const pushEntry = (at: Date) => {
     const predictions = realtimeGtfsService.filterForCommute(
       ctx.realtime,
       commute,
@@ -124,8 +139,43 @@ async function buildWidgetTimelineEntries(commute: SavedCommute): Promise<{
     );
     const nextScheduled = predictions.length === 0 ? ctx.fallbackSchedule : [];
     const state = countdownStateAt(commute, at, ctx, nextScheduled);
-    if (i === 0) nowState = state;
-    entries.push({ date: at, props: countdownToWidgetProps(state, at) });
+    entries.push({
+      date: at,
+      props: timelineWidgetProps(countdownToWidgetProps(state, at)),
+    });
+  };
+
+  if (targetMs != null && targetMs > timelineStart.getTime()) {
+    const remainingSec = Math.ceil((targetMs - timelineStart.getTime()) / 1000);
+    const baseProps = timelineWidgetProps(nowProps);
+    const startSec = parseInt(baseProps.primaryValue, 10);
+    const canTickSeconds =
+      !Number.isNaN(startSec) && startSec > 0 && startSec <= remainingSec + 1;
+
+    if (canTickSeconds) {
+      for (let s = 0; s <= remainingSec; s++) {
+        const secLeft = Math.max(0, startSec - s);
+        entries.push({
+          date: new Date(timelineStart.getTime() + s * 1000),
+          props: {
+            ...baseProps,
+            primaryValue: String(secLeft).padStart(2, '0'),
+          },
+        });
+      }
+    } else {
+      for (let s = 0; s <= remainingSec; s++) {
+        pushEntry(new Date(timelineStart.getTime() + s * 1000));
+      }
+    }
+    const minuteLoopStart = new Date(timelineStart.getTime() + remainingSec * 1000);
+    for (let i = 1; i <= TIMELINE_HORIZON_MIN; i++) {
+      pushEntry(new Date(minuteLoopStart.getTime() + i * 60_000));
+    }
+  } else {
+    for (let i = 0; i <= TIMELINE_HORIZON_MIN; i++) {
+      pushEntry(new Date(timelineStart.getTime() + i * 60_000));
+    }
   }
 
   return { entries, nowState };

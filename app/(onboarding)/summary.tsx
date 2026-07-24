@@ -8,7 +8,7 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { WidgetPreviewCard } from '@/components/ui/WidgetPreviewCard';
 import { formatLineDestinationLabel } from '@/lib/routeLineLabel';
 import { draftToSaved, getActiveCommute } from '@/lib/activeCommute';
-import { refreshWidgetTimeline, computeWidgetDisplayProps } from '@/services/widget/widgetTimelineService';
+import { computeWidgetDisplayProps } from '@/services/widget/widgetTimelineService';
 import { getStaticGtfsService } from '@/services/gtfs/staticGtfsService';
 import { useTransitAgencyId } from '@/hooks/useTransitAgencyId';
 import {
@@ -94,12 +94,9 @@ export default function SummaryScreen() {
 
   const saved = activeCommute;
 
-  const onAddToHome = async () => {
+  const onAddToHome = () => {
     if (!saved) return;
     saveCommute(saved);
-
-    await refreshWidgetTimeline(saved);
-
     Alert.alert(
       'Add the widget',
       'On your Home Screen, touch and hold an empty area, tap + in the corner, then search for Stumbl.'

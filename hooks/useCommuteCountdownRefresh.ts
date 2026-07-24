@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
 
-import { refreshWidgetTimeline } from '@/services/widget/widgetTimelineService';
+import { scheduleWidgetTimelineRefresh } from '@/lib/scheduleWidgetRefresh';
 import { useCommuteStore } from '@/store/commuteStore';
 
 /**
@@ -16,20 +16,23 @@ export function useCommuteCountdownRefresh() {
   useEffect(() => {
     if (!hasHydrated) return;
 
-    const refresh = () => {
-      const { savedCommute } = useCommuteStore.getState();
-      void refreshWidgetTimeline(savedCommute);
-    };
+    const schedule = () =>
+      scheduleWidgetTimelineRefresh(() => useCommuteStore.getState().savedCommute);
 
-    refresh();
-    const id = setInterval(refresh, 30_000);
+    schedule();
+    const id = setInterval(schedule, 30_000);
     const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') refresh();
+      if (state === 'active') schedule();
     });
 
     return () => {
       clearInterval(id);
       sub.remove();
     };
+  }, [hasHydrated]);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    scheduleWidgetTimelineRefresh(() => useCommuteStore.getState().savedCommute);
   }, [savedCommute, hasHydrated]);
 }

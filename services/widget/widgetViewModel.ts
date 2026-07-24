@@ -14,8 +14,8 @@ export type WidgetDisplayProps = {
   /** Open in Maps when the widget supports a URL (app + widget bridge). */
   mapsUrl: string;
   /**
-   * When set, the Home Screen widget renders a native SwiftUI timer to this
-   * instant so the countdown ticks every second without per-second timeline entries.
+   * When set, the in-app preview ticks every second below 60s. The Home Screen
+   * widget uses per-second timeline entries with the same large number + unit layout.
    */
   countdownTargetMs?: number;
 };

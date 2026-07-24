@@ -35,8 +35,8 @@ export default function BufferScreen() {
   const onNext = () => {
     setDraft({ bufferMinutes: seconds / 60 });
     if (isEdit) {
-      if (savedCommute) commitDraft();
       router.back();
+      if (savedCommute) commitDraft();
     } else {
       router.push('/(onboarding)/summary');
     }
