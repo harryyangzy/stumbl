@@ -4,7 +4,10 @@ import { DEFAULT_TRANSIT_AGENCY } from '@/lib/transitAgencies';
 import { computeCountdownState, type CountdownState } from '@/services/countdown/countdownService';
 import { syncLiveActivity } from '@/services/liveActivity/liveActivityService';
 import { buildGoogleMapsCoordinateUrl } from '@/services/maps/googleMaps';
-import { getStaticGtfsService } from '@/services/gtfs/staticGtfsService';
+import {
+  getStaticGtfsService,
+  type StaticGtfsService,
+} from '@/services/gtfs/staticGtfsService';
 import {
   realtimeGtfsService,
   matchStopIdsForCommute,
@@ -25,6 +28,14 @@ const emptyRealtime: RealtimeFetchResult = {
   source: 'unavailable',
 };
 
+type CountdownContext = {
+  mapsUrl: string;
+  realtime: RealtimeFetchResult;
+  matchStopIds: Set<string>;
+  /** Pre-fetched schedule for "no buses" footer when live predictions are empty. */
+  fallbackSchedule: Date[];
+};
+
 function emptyProps(now: Date): WidgetDisplayProps {
   return countdownToWidgetProps(
     computeCountdownState({
@@ -39,56 +50,80 @@ function emptyProps(now: Date): WidgetDisplayProps {
   );
 }
 
+async function loadCountdownContext(commute: SavedCommute, at: Date): Promise<CountdownContext> {
+  const mapsUrl = buildGoogleMapsCoordinateUrl(commute.stopLat, commute.stopLon);
+  const agencyId = commute.agencyId ?? DEFAULT_TRANSIT_AGENCY;
+  const staticGtfs: StaticGtfsService = await getStaticGtfsService(agencyId);
+  const [realtime, matchStopIds] = await Promise.all([
+    realtimeGtfsService.fetchTripUpdatesForCommute(commute, at),
+    matchStopIdsForCommute(commute),
+  ]);
+  const nowPredictions = realtimeGtfsService.filterForCommute(
+    realtime,
+    commute,
+    at.getTime(),
+    matchStopIds
+  );
+  const fallbackSchedule =
+    nowPredictions.length === 0
+      ? await staticGtfs.getScheduledArrivalsForCommute(commute, at, 8)
+      : [];
+  return { mapsUrl, realtime, matchStopIds, fallbackSchedule };
+}
+
+function countdownStateAt(
+  commute: SavedCommute,
+  at: Date,
+  ctx: CountdownContext,
+  nextScheduled: Date[]
+): CountdownState {
+  const realtimeAt: RealtimeFetchResult =
+    ctx.realtime.feedTimestampSec === null
+      ? ctx.realtime
+      : { ...ctx.realtime, feedTimestampSec: Math.floor(at.getTime() / 1000) };
+  const predictions = realtimeGtfsService.filterForCommute(
+    ctx.realtime,
+    commute,
+    at.getTime(),
+    ctx.matchStopIds
+  );
+  return computeCountdownState({
+    commute,
+    now: at,
+    realtime: realtimeAt,
+    predictions,
+    nextScheduled,
+    mapsUrl: ctx.mapsUrl,
+  });
+}
+
+async function computeCountdownNow(
+  commute: SavedCommute,
+  now = new Date()
+): Promise<CountdownState> {
+  const ctx = await loadCountdownContext(commute, now);
+  return countdownStateAt(commute, now, ctx, ctx.fallbackSchedule);
+}
+
 async function buildWidgetTimelineEntries(commute: SavedCommute): Promise<{
   entries: { date: Date; props: WidgetDisplayProps }[];
   nowState: CountdownState | null;
 }> {
-  const mapsUrl = buildGoogleMapsCoordinateUrl(commute.stopLat, commute.stopLon);
-  const agencyId = commute.agencyId ?? DEFAULT_TRANSIT_AGENCY;
-  const staticGtfs = await getStaticGtfsService(agencyId);
-  const [realtime, matchStopIds] = await Promise.all([
-    realtimeGtfsService.fetchTripUpdatesForCommute(commute, new Date()),
-    matchStopIdsForCommute(commute),
-  ]);
-  /** Anchor after network + GTFS work so entry 0 matches wall-clock when pushed. */
   const timelineStart = new Date();
+  const ctx = await loadCountdownContext(commute, timelineStart);
 
   const entries: { date: Date; props: WidgetDisplayProps }[] = [];
   let nowState: CountdownState | null = null;
   for (let i = 0; i <= TIMELINE_HORIZON_MIN; i++) {
     const at = new Date(timelineStart.getTime() + i * 60_000);
-    /**
-     * Data fetched now is the best information for the whole horizon; pin the feed
-     * timestamp to each entry so the staleness check doesn't discard predictions
-     * for entries a few minutes out. Genuinely unavailable feeds stay unavailable.
-     */
-    const realtimeAt: RealtimeFetchResult =
-      realtime.feedTimestampSec === null
-        ? realtime
-        : { ...realtime, feedTimestampSec: Math.floor(at.getTime() / 1000) };
     const predictions = realtimeGtfsService.filterForCommute(
-      realtime,
+      ctx.realtime,
       commute,
       at.getTime(),
-      matchStopIds
+      ctx.matchStopIds
     );
-    /**
-     * Static timetable is only needed when live predictions are empty (footer
-     * for "no buses"). Skipping it when we have live data avoids 60+ GTFS scans
-     * per refresh — that was slowing GRT updates by several seconds.
-     */
-    const nextScheduled =
-      predictions.length === 0
-        ? await staticGtfs.getScheduledArrivalsForCommute(commute, at, 8)
-        : [];
-    const state = computeCountdownState({
-      commute,
-      now: at,
-      realtime: realtimeAt,
-      predictions,
-      nextScheduled,
-      mapsUrl,
-    });
+    const nextScheduled = predictions.length === 0 ? ctx.fallbackSchedule : [];
+    const state = countdownStateAt(commute, at, ctx, nextScheduled);
     if (i === 0) nowState = state;
     entries.push({ date: at, props: countdownToWidgetProps(state, at) });
   }
@@ -98,7 +133,7 @@ async function buildWidgetTimelineEntries(commute: SavedCommute): Promise<{
 
 /**
  * Fetches the latest realtime + scheduled data for a commute and returns the
- * widget props for "now". Shared by the in-app preview and the Home Screen widget.
+ * widget props for "now". Shared by the in-app preview.
  */
 export async function computeWidgetDisplayProps(
   commute: SavedCommute | null,
@@ -111,8 +146,8 @@ export async function computeWidgetDisplayProps(
   const mapsUrl = buildGoogleMapsCoordinateUrl(commute.stopLat, commute.stopLon);
 
   try {
-    const { entries } = await buildWidgetTimelineEntries(commute);
-    return entries[0]?.props ?? emptyProps(now);
+    const state = await computeCountdownNow(commute, now);
+    return countdownToWidgetProps(state, now);
   } catch {
     return countdownToWidgetProps(
       computeCountdownState({
@@ -128,13 +163,9 @@ export async function computeWidgetDisplayProps(
   }
 }
 
-/**
- * Fetches the latest realtime + scheduled data once, then pushes a minute-by-minute
- * timeline to the Home Screen widget so the countdown keeps updating without the app.
- * Returns the entry for "now" (useful for in-app previews), or null when the native
- * widget module is unavailable (Expo Go).
- */
-export async function refreshWidgetTimeline(
+let refreshChain: Promise<WidgetDisplayProps | null> = Promise.resolve(null);
+
+async function runRefreshWidgetTimeline(
   commute: SavedCommute | null
 ): Promise<WidgetDisplayProps | null> {
   const widget = await loadStumblWidget();
@@ -145,7 +176,7 @@ export async function refreshWidgetTimeline(
     widgetMapsUrlBridge.current = '';
     const empty = emptyProps(now);
     widget.updateSnapshot(empty);
-    // Tear down any lingering "time to leave" Live Activity.
+    widget.updateTimeline([{ date: now, props: empty }]);
     void syncLiveActivity(null);
     return empty;
   }
@@ -160,7 +191,6 @@ export async function refreshWidgetTimeline(
       widget.updateSnapshot(snapshot);
     }
     widget.updateTimeline(entries);
-    // Drive the Dynamic Island / Live Activity from the current-moment state.
     void syncLiveActivity(nowState);
     return snapshot ?? null;
   } catch {
@@ -177,6 +207,21 @@ export async function refreshWidgetTimeline(
       now
     );
     widget.updateSnapshot(fallback);
+    widget.updateTimeline([{ date: now, props: fallback }]);
+    void syncLiveActivity(null);
     return fallback;
   }
+}
+
+/**
+ * Fetches the latest realtime + scheduled data once, then pushes a minute-by-minute
+ * timeline to the Home Screen widget so the countdown keeps updating without the app.
+ * Serialized so overlapping refreshes cannot apply stale data out of order.
+ */
+export function refreshWidgetTimeline(
+  commute: SavedCommute | null
+): Promise<WidgetDisplayProps | null> {
+  const run = refreshChain.then(() => runRefreshWidgetTimeline(commute));
+  refreshChain = run.catch(() => null);
+  return run;
 }

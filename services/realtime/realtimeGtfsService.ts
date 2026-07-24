@@ -123,7 +123,8 @@ function mergeRealtimeResults(results: RealtimeFetchResult[]): RealtimeFetchResu
   const timestamps = results
     .map((r) => r.feedTimestampSec)
     .filter((t): t is number => t !== null);
-  const feedTimestampSec = timestamps.length > 0 ? Math.min(...timestamps) : null;
+  /** Fresh if any merged feed is fresh — avoid GRT bus/ION timestamp mismatch blanking live data. */
+  const feedTimestampSec = timestamps.length > 0 ? Math.max(...timestamps) : null;
   const anyLive = results.some((r) => r.source === 'live');
   return {
     predictions,

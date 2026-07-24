@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActionSheetIOS, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EditWidgetSheet, type EditSheetLine } from '@/components/ui/EditWidgetSheet';
@@ -50,7 +50,6 @@ export default function SummaryScreen() {
         const props = await computeWidgetDisplayProps(commute);
         if (!alive) return;
         setPreview(props);
-        void refreshWidgetTimeline(commute);
       } catch {
         if (alive) setPreview(null);
       }
@@ -107,7 +106,7 @@ export default function SummaryScreen() {
     );
   };
 
-  const onReset = () => {
+  const onOpenMenu = () => {
     Alert.alert('Reset widget?', 'This clears your saved setup and starts over.', [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -119,19 +118,6 @@ export default function SummaryScreen() {
         },
       },
     ]);
-  };
-
-  const onOpenMenu = () => {
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        options: ['Cancel', 'Reset Widget'],
-        cancelButtonIndex: 0,
-        destructiveButtonIndex: 1,
-      },
-      (buttonIndex) => {
-        if (buttonIndex === 1) onReset();
-      }
-    );
   };
 
   const goEdit = (
@@ -212,6 +198,7 @@ const styles = StyleSheet.create({
   header: {
     marginTop: 12,
     justifyContent: 'center',
+    zIndex: 10,
   },
   pageTitle: {
     fontFamily: theme.fonts.heading,
@@ -222,15 +209,18 @@ const styles = StyleSheet.create({
   },
   dotsHit: {
     position: 'absolute',
-    right: theme.screenEdge,
+    right: theme.screenEdge - 8,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    justifyContent: 'center',
+    gap: 3,
+    minWidth: 44,
+    minHeight: 44,
   },
   dot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: theme.black,
   },
   content: {

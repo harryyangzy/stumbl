@@ -644,15 +644,24 @@ export class StaticGtfsService {
 }
 
 const singletons = new Map<TransitAgencyId, StaticGtfsService>();
+const loading = new Map<TransitAgencyId, Promise<StaticGtfsService>>();
 
 export async function getStaticGtfsService(
   agencyId: TransitAgencyId = 'grt'
 ): Promise<StaticGtfsService> {
-  let svc = singletons.get(agencyId);
-  if (!svc) {
-    svc = new StaticGtfsService(agencyId);
-    await svc.load();
-    singletons.set(agencyId, svc);
+  const existing = singletons.get(agencyId);
+  if (existing) return existing;
+
+  let pending = loading.get(agencyId);
+  if (!pending) {
+    pending = (async () => {
+      const svc = new StaticGtfsService(agencyId);
+      await svc.load();
+      singletons.set(agencyId, svc);
+      loading.delete(agencyId);
+      return svc;
+    })();
+    loading.set(agencyId, pending);
   }
-  return svc;
+  return pending;
 }

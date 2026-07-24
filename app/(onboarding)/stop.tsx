@@ -47,7 +47,9 @@ export default function StopScreen() {
   const isEdit = useLocalSearchParams<{ edit?: string }>().edit === '1';
   const { height: windowHeight } = useWindowDimensions();
   const draft = useCommuteStore((s) => s.draft);
+  const savedCommute = useCommuteStore((s) => s.savedCommute);
   const setDraft = useCommuteStore((s) => s.setDraft);
+  const commitDraft = useCommuteStore((s) => s.commitDraft);
   const agencyId = useTransitAgencyId();
 
   /** Push main block down from top (~⅓ screen minus 100px vs earlier tuning). */
@@ -171,6 +173,10 @@ export default function StopScreen() {
       stopName: s.stopName,
       stopLat: s.stopLat,
       stopLon: s.stopLon,
+      routeId: undefined,
+      routeShortName: undefined,
+      headsign: undefined,
+      selectedRouteIds: undefined,
     });
   };
 
@@ -187,6 +193,7 @@ export default function StopScreen() {
   const goNext = () => {
     if (!selectedId) return;
     if (isEdit) {
+      if (savedCommute) commitDraft();
       router.back();
     } else {
       router.push('/(onboarding)/line');

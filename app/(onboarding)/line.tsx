@@ -21,7 +21,9 @@ export default function LineScreen() {
   /** Opened from the widget preview's edit sheet — confirm goes back instead of forward. */
   const isEdit = useLocalSearchParams<{ edit?: string }>().edit === '1';
   const draft = useCommuteStore((s) => s.draft);
+  const savedCommute = useCommuteStore((s) => s.savedCommute);
   const setDraft = useCommuteStore((s) => s.setDraft);
+  const commitDraft = useCommuteStore((s) => s.commitDraft);
   const agencyId = useTransitAgencyId();
 
   const [loading, setLoading] = useState(true);
@@ -52,6 +54,31 @@ export default function LineScreen() {
     };
   }, [draft.stopId, agencyId]);
 
+  /** Drop route picks that are not valid for the current stop. */
+  useEffect(() => {
+    if (loading || options.length === 0) return;
+    const selectedIds =
+      draft.selectedRouteIds ?? (draft.routeId ? [draft.routeId] : []);
+    const valid = selectedIds.filter((id) => options.some((o) => o.routeId === id));
+    if (valid.length === selectedIds.length) return;
+    const primary = options.find((o) => o.routeId === valid[0]);
+    setDraft(
+      primary
+        ? {
+            selectedRouteIds: [primary.routeId],
+            routeId: primary.routeId,
+            routeShortName: primary.shortName,
+            headsign: primary.label,
+          }
+        : {
+            routeId: undefined,
+            routeShortName: undefined,
+            headsign: undefined,
+            selectedRouteIds: undefined,
+          }
+    );
+  }, [loading, options, draft.selectedRouteIds, draft.routeId, setDraft]);
+
   const selectedIds = useMemo(
     () => draft.selectedRouteIds ?? (draft.routeId ? [draft.routeId] : []),
     [draft.selectedRouteIds, draft.routeId]
@@ -59,30 +86,20 @@ export default function LineScreen() {
 
   const toggleRoute = useCallback(
     (o: LineOption) => {
-      const has = selectedIds.includes(o.routeId);
-      const next = has ? selectedIds.filter((id) => id !== o.routeId) : [...selectedIds, o.routeId];
-      const primary = options.find((x) => x.routeId === next[0]);
       setDraft({
-        selectedRouteIds: next,
-        ...(primary
-          ? {
-              routeId: primary.routeId,
-              routeShortName: primary.shortName,
-              headsign: primary.label,
-            }
-          : {
-              routeId: undefined,
-              routeShortName: undefined,
-              headsign: undefined,
-            }),
+        selectedRouteIds: [o.routeId],
+        routeId: o.routeId,
+        routeShortName: o.shortName,
+        headsign: o.label,
       });
     },
-    [options, selectedIds, setDraft]
+    [setDraft]
   );
 
   const onNext = () => {
     if (selectedIds.length === 0) return;
     if (isEdit) {
+      if (savedCommute) commitDraft();
       router.back();
     } else {
       router.push('/(onboarding)/walking');
@@ -114,7 +131,7 @@ export default function LineScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}>
             <Text style={styles.title}>What transit line do you take?</Text>
-            <Text style={styles.sub}>Select one or more</Text>
+            <Text style={styles.sub}>Select one route</Text>
 
             {loading ? (
               <ActivityIndicator color={theme.brandGreen} style={styles.loader} />

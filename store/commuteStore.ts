@@ -4,6 +4,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { DEFAULT_TRANSIT_AGENCY } from '@/lib/transitAgencies';
 import type { TransitAgencyId } from '@/lib/transitAgencies';
+import { draftToSaved } from '@/lib/activeCommute';
 import type { SavedCommute } from '@/types/commute';
 
 export type OnboardingDraft = {
@@ -15,7 +16,7 @@ export type OnboardingDraft = {
   routeId?: string;
   routeShortName?: string;
   headsign?: string | null;
-  /** Multi-select on line screen; primary route fields stay in sync with first id for save/countdown. */
+  /** Selected route on line screen; kept in sync with routeId for save/countdown. */
   selectedRouteIds?: string[];
   walkingMinutes?: number;
   bufferMinutes?: number;
@@ -35,6 +36,8 @@ type CommuteState = {
   resetDraft: () => void;
   beginEditSetup: () => void;
   saveCommute: (c: SavedCommute) => void;
+  /** Persist the current draft when editing from the widget preview. */
+  commitDraft: () => void;
   clearSaved: () => void;
 };
 
@@ -67,6 +70,10 @@ export const useCommuteStore = create<CommuteState>()(
         });
       },
       saveCommute: (c) => set({ savedCommute: c, onboardingComplete: true, draft: {} }),
+      commitDraft: () => {
+        const saved = draftToSaved(get().draft);
+        if (saved) set({ savedCommute: saved, onboardingComplete: true, draft: {} });
+      },
       clearSaved: () => set({ savedCommute: null, onboardingComplete: false, draft: {} }),
     }),
     {

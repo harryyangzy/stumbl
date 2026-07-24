@@ -18,7 +18,24 @@ export default function CityScreen() {
   const selectedAgency = draftAgency ?? savedAgency;
 
   const onPickAgency = (agencyId: TransitAgencyId) => {
-    setDraft({ agencyId });
+    const current =
+      useCommuteStore.getState().draft.agencyId ??
+      useCommuteStore.getState().savedCommute?.agencyId;
+    if (current === agencyId) {
+      setDraft({ agencyId });
+      return;
+    }
+    setDraft({
+      agencyId,
+      stopId: undefined,
+      stopName: undefined,
+      stopLat: undefined,
+      stopLon: undefined,
+      routeId: undefined,
+      routeShortName: undefined,
+      headsign: undefined,
+      selectedRouteIds: undefined,
+    });
   };
 
   const onNext = () => {

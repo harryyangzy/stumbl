@@ -24,7 +24,9 @@ export default function BufferScreen() {
   /** Opened from the widget preview's edit sheet — confirm goes back instead of forward. */
   const isEdit = useLocalSearchParams<{ edit?: string }>().edit === '1';
   const draft = useCommuteStore((s) => s.draft);
+  const savedCommute = useCommuteStore((s) => s.savedCommute);
   const setDraft = useCommuteStore((s) => s.setDraft);
+  const commitDraft = useCommuteStore((s) => s.commitDraft);
 
   const [seconds, setSeconds] = useState(() =>
     minutesToSteppedSec(draft.bufferMinutes, 3, MAX_BUFFER_SEC)
@@ -33,6 +35,7 @@ export default function BufferScreen() {
   const onNext = () => {
     setDraft({ bufferMinutes: seconds / 60 });
     if (isEdit) {
+      if (savedCommute) commitDraft();
       router.back();
     } else {
       router.push('/(onboarding)/summary');

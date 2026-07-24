@@ -31,9 +31,8 @@ export function draftToSaved(d: OnboardingDraft): SavedCommute | null {
 }
 
 /**
- * Commute that should drive countdowns and the Home Screen widget.
- * Prefer the in-app draft when complete so preview edits reach the widget
- * before the user taps "Add to Home".
+ * Commute that should drive the in-app preview and countdown UI.
+ * Prefers a complete draft during onboarding/editing; falls back to saved commute.
  */
 export function getActiveCommute(
   draft: OnboardingDraft,

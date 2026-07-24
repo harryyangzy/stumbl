@@ -48,7 +48,7 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'ca.stumbl.app',
-    buildNumber: '12',
+    buildNumber: '13',
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
       NSAppTransportSecurity: {

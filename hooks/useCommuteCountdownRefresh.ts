@@ -1,34 +1,24 @@
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
 
-import { getActiveCommute } from '@/lib/activeCommute';
 import { refreshWidgetTimeline } from '@/services/widget/widgetTimelineService';
 import { useCommuteStore } from '@/store/commuteStore';
 
 /**
- * Keeps the Home Screen widget timeline fresh: on launch, when the active commute
- * changes (saved commute or in-progress draft), when the app returns to the
- * foreground, and every 30s while open.
- * The pushed timeline covers the next hour, so the widget keeps counting down
- * after the app is backgrounded or closed.
+ * Keeps the Home Screen widget timeline fresh for the **saved** commute only.
+ * Draft/onboarding edits update the in-app preview separately and must not push
+ * to the widget until the user taps "Add to Home" (or Done on an edit).
  */
 export function useCommuteCountdownRefresh() {
   const savedCommute = useCommuteStore((s) => s.savedCommute);
-  const draft = useCommuteStore((s) => s.draft);
   const hasHydrated = useCommuteStore((s) => s.hasHydrated);
 
   useEffect(() => {
-    /**
-     * Wait for the persisted store to rehydrate before touching the widget.
-     * Refreshing while `savedCommute` is still the initial null would push the
-     * "setup" placeholder over a real saved commute on cold launch.
-     */
     if (!hasHydrated) return;
 
     const refresh = () => {
-      const { draft, savedCommute } = useCommuteStore.getState();
-      const commute = getActiveCommute(draft, savedCommute);
-      void refreshWidgetTimeline(commute);
+      const { savedCommute } = useCommuteStore.getState();
+      void refreshWidgetTimeline(savedCommute);
     };
 
     refresh();
@@ -41,5 +31,5 @@ export function useCommuteCountdownRefresh() {
       clearInterval(id);
       sub.remove();
     };
-  }, [savedCommute, draft, hasHydrated]);
+  }, [savedCommute, hasHydrated]);
 }
