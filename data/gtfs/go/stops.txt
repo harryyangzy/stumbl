@@ -6,6 +6,7 @@ UN,Union Station GO,43.645195,-79.3806,02,https://www.gotransit.com/find-a-stati
 UI,Unionville GO,43.851689,-79.314332,71,https://www.gotransit.com/find-a-station-or-stop/UI/station-details,0,,1,
 ST,Stouffville GO,43.970924,-79.249989,74,https://www.gotransit.com/find-a-station-or-stop/ST/station-details,0,,1,
 SR,Streetsville GO,43.575584,-79.70882,21,https://www.gotransit.com/find-a-station-or-stop/SR/station-details,0,,1,
+SF,Stratford GO,43.3643734351,-80.9757413887,47,https://www.gotransit.com/find-a-station-or-stop/SF/station-details,0,,1,
 SCTH,St. Catharines GO,43.1476135,-79.2549057,83,https://www.gotransit.com/find-a-station-or-stop/SCTH/station-details,0,,1,
 SC,Scarborough GO,43.716945,-79.254722,06,https://www.gotransit.com/find-a-station-or-stop/SC/station-details,0,,1,
 RU,Rutherford GO,43.838487,-79.498819,61,https://www.gotransit.com/find-a-station-or-stop/RU/station-details,0,,1,

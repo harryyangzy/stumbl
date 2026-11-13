@@ -1,2 +1,2 @@
 feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version
-London Transit,http://www.londontransit.ca,en,20260628,20260905,2026 Summer_20260615
+London Transit,http://www.londontransit.ca,en,20261129,20270206,2026 November_20261111
