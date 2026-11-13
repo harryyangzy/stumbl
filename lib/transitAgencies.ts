@@ -11,6 +11,11 @@ export type TransitAgencyConfig = {
   ionSupport: boolean;
   /** Uses Metrolinx Open Data API (requires EXPO_PUBLIC_METROLINX_API_KEY). */
   metrolinxApi: boolean;
+  /**
+   * Use Google Maps Routes API transit times for this agency's countdown, falling
+   * back to the agency's own GTFS-RT feed when Google is unavailable.
+   */
+  googleRealtime: boolean;
   realtime: {
     tripUpdates: readonly string[];
   };
@@ -26,6 +31,7 @@ export const TRANSIT_AGENCIES: Record<TransitAgencyId, TransitAgencyConfig> = {
     excludeParentStations: false,
     ionSupport: false,
     metrolinxApi: false,
+    googleRealtime: true,
     realtime: {
       tripUpdates: ['http://gtfs.ltconline.ca/TripUpdate/TripUpdates.pb'],
     },
@@ -39,6 +45,7 @@ export const TRANSIT_AGENCIES: Record<TransitAgencyId, TransitAgencyConfig> = {
     excludeParentStations: true,
     ionSupport: true,
     metrolinxApi: false,
+    googleRealtime: false,
     realtime: {
       tripUpdates: [
         'https://webapps.regionofwaterloo.ca/api/grt-routes/api/tripupdates/1',
@@ -55,6 +62,7 @@ export const TRANSIT_AGENCIES: Record<TransitAgencyId, TransitAgencyConfig> = {
     excludeParentStations: false,
     ionSupport: false,
     metrolinxApi: true,
+    googleRealtime: false,
     realtime: {
       tripUpdates: [],
     },

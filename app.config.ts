@@ -32,6 +32,8 @@ const config: ExpoConfig = {
     disableNativeWidgets: !useNativeWidgets,
     /** Metrolinx Open Data API key — set EXPO_PUBLIC_METROLINX_API_KEY in .env (see .env.example). */
     metrolinxApiKey: process.env.EXPO_PUBLIC_METROLINX_API_KEY ?? '',
+    /** Google Maps Routes API key (LTC live times) — EXPO_PUBLIC_GOOGLE_MAPS_API_KEY in .env. Restrict to ca.stumbl.app + Routes API. */
+    googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? '',
   },
   /** iOS-only: avoids advertising web in the CLI and matches product scope. Metro can still bundle web if something requests it; see README. */
   platforms: ['ios'],

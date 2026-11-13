@@ -3,11 +3,9 @@ import GtfsRealtimeBindings from 'gtfs-realtime-bindings';
 import { USE_MOCK_REALTIME, REALTIME_FETCH_TIMEOUT_MS } from '@/lib/config';
 import { resolveIonStopIds } from '@/lib/grtIonStopMap';
 import { getTransitAgency } from '@/lib/transitAgencies';
-import {
-  fetchGoNextServiceRealtime,
-  fetchGoTripUpdatesProtobuf,
-} from '@/services/go/goApiService';
+import { fetchGoNextServiceRealtime, fetchGoTripUpdatesProtobuf } from '@/services/go/goApiService';
 import { getStaticGtfsService } from '@/services/gtfs/staticGtfsService';
+import { fetchGoogleTransitPredictions } from '@/services/realtime/googleTransitRealtime';
 import type { SavedCommute } from '@/types/commute';
 import type { ArrivalPrediction, RealtimeFetchResult } from '@/types/realtime';
 
@@ -57,9 +55,7 @@ export function parseTripUpdatesJson(text: string): RealtimeFetchResult {
     for (const stu of tu.stopTimeUpdate ?? []) {
       const stopId = stu.stopId;
       if (!stopId) continue;
-      const t =
-        parseTimeSec(stu.arrival?.time) ??
-        parseTimeSec(stu.departure?.time);
+      const t = parseTimeSec(stu.arrival?.time) ?? parseTimeSec(stu.departure?.time);
       if (t !== null) {
         predictions.push({ stopId, routeId, tripId, arrivalTimeSec: t });
       }
@@ -120,9 +116,7 @@ async function fetchWithTimeout(url: string, ms: number): Promise<Response> {
 
 function mergeRealtimeResults(results: RealtimeFetchResult[]): RealtimeFetchResult {
   const predictions = results.flatMap((r) => r.predictions);
-  const timestamps = results
-    .map((r) => r.feedTimestampSec)
-    .filter((t): t is number => t !== null);
+  const timestamps = results.map((r) => r.feedTimestampSec).filter((t): t is number => t !== null);
   /** Fresh if any merged feed is fresh — avoid GRT bus/ION timestamp mismatch blanking live data. */
   const feedTimestampSec = timestamps.length > 0 ? Math.max(...timestamps) : null;
   const anyLive = results.some((r) => r.source === 'live');
@@ -133,7 +127,9 @@ function mergeRealtimeResults(results: RealtimeFetchResult[]): RealtimeFetchResu
   };
 }
 
-async function fetchTripUpdatesFromEndpoints(urls: readonly string[]): Promise<RealtimeFetchResult> {
+async function fetchTripUpdatesFromEndpoints(
+  urls: readonly string[]
+): Promise<RealtimeFetchResult> {
   const settled = await Promise.all(
     urls.map(async (url) => {
       try {
@@ -199,6 +195,10 @@ export class RealtimeGtfsService {
     }
     try {
       const agency = getTransitAgency(commute.agencyId);
+      if (agency.googleRealtime) {
+        const google = await fetchGoogleTransitPredictions(commute, now);
+        if (google) return google;
+      }
       if (agency.metrolinxApi) {
         /**
          * Stop/NextService is the reliable live source for GO: it returns the

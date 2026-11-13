@@ -2,6 +2,7 @@ import { Asset } from 'expo-asset';
 import { readAsStringAsync } from 'expo-file-system/legacy';
 
 import { parseGtfsTable } from '@/lib/csv';
+import { haversineMeters } from '@/lib/geo';
 import {
   buildStaticStopIdsByIonKey,
   ION_ROUTE_ID,
@@ -632,6 +633,61 @@ export class StaticGtfsService {
     }
 
     return candidates.slice(0, count);
+  }
+
+  private downstreamStopCache = new Map<string, GtfsStop | null>();
+
+  /**
+   * A stop further along `routeId` after `stopId` (same direction), used as the
+   * destination when asking a trip planner for departures at `stopId`. Picks the
+   * first stop at least `minMeters` away so the planner prefers riding over
+   * walking, else the last stop of the trip. Prefers trips matching `headsign`.
+   */
+  downstreamStop(
+    stopId: string,
+    routeId: string,
+    headsign: string | null,
+    minMeters = 2000
+  ): GtfsStop | null {
+    const cacheKey = `${stopId}|${routeId}|${headsign ?? ''}`;
+    const cached = this.downstreamStopCache.get(cacheKey);
+    if (cached !== undefined) return cached;
+
+    const origin = this.getStop(stopId);
+    const atStop = (this.stopTimesAtStop.get(stopId) ?? []).filter(
+      (st) => this.trips.get(st.tripId)?.routeId === routeId
+    );
+    const pick =
+      atStop.find((st) => headsign != null && this.trips.get(st.tripId)?.headsign === headsign) ??
+      atStop[0];
+    if (!origin || !pick) {
+      this.downstreamStopCache.set(cacheKey, null);
+      return null;
+    }
+
+    const later: { stopId: string; seq: number }[] = [];
+    for (const [sid, times] of this.stopTimesAtStop) {
+      for (const st of times) {
+        if (st.tripId === pick.tripId && st.stopSequence > pick.stopSequence) {
+          later.push({ stopId: sid, seq: st.stopSequence });
+        }
+      }
+    }
+    later.sort((a, b) => a.seq - b.seq);
+
+    let result: GtfsStop | null = null;
+    for (const { stopId: sid } of later) {
+      const stop = this.getStop(sid);
+      if (!stop) continue;
+      result = stop;
+      if (
+        haversineMeters(origin.stopLat, origin.stopLon, stop.stopLat, stop.stopLon) >= minMeters
+      ) {
+        break;
+      }
+    }
+    this.downstreamStopCache.set(cacheKey, result);
+    return result;
   }
 
   getStop(stopId: string): GtfsStop | undefined {
