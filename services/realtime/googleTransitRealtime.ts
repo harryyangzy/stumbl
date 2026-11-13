@@ -20,6 +20,10 @@ const MAX_CALLS_PER_REFRESH = 3;
 /** Google's stop location vs. our GTFS stop. */
 const STOP_MATCH_METERS = 75;
 
+function devLog(message: string) {
+  if (__DEV__) console.log(`[google-realtime] ${message}`);
+}
+
 type CacheEntry = { fetchedAtMs: number; result: RealtimeFetchResult | null };
 const cache = new Map<string, CacheEntry>();
 const inFlight = new Map<string, Promise<RealtimeFetchResult | null>>();
@@ -116,11 +120,17 @@ async function fetchUncached(
   now: Date
 ): Promise<RealtimeFetchResult | null> {
   const apiKey = getGoogleMapsApiKey();
-  if (!apiKey) return null;
+  if (!apiKey) {
+    devLog('no EXPO_PUBLIC_GOOGLE_MAPS_API_KEY in this bundle — using agency feed');
+    return null;
+  }
 
   const gtfs = await getStaticGtfsService(commute.agencyId);
   const dest = gtfs.downstreamStop(commute.stopId, commute.routeId, commute.headsign);
-  if (!dest) return null;
+  if (!dest) {
+    devLog(`no downstream stop for ${commute.stopId} route ${commute.routeId} — using agency feed`);
+    return null;
+  }
 
   const seen = new Set<number>();
   let cursor = now.getTime();
@@ -132,7 +142,19 @@ async function fetchUncached(
     for (const ms of found) seen.add(Math.round(ms / 1000));
     cursor = Math.min(...found) + 60_000;
   }
-  if (seen.size === 0) return null;
+  if (seen.size === 0) {
+    devLog(
+      `no route ${commute.routeShortName} departures at ${commute.stopId} via ${dest.stopId} — using agency feed`
+    );
+    return null;
+  }
+  devLog(
+    `${seen.size} departures for route ${commute.routeShortName}: ` +
+      [...seen]
+        .sort((a, b) => a - b)
+        .map((s) => new Date(s * 1000).toLocaleTimeString())
+        .join(', ')
+  );
 
   const predictions: ArrivalPrediction[] = [...seen]
     .sort((a, b) => a - b)
@@ -165,7 +187,12 @@ export async function fetchGoogleTransitPredictions(
   let pending = inFlight.get(key);
   if (!pending) {
     pending = fetchUncached(commute, now)
-      .catch(() => null)
+      .catch((e: unknown) => {
+        devLog(
+          `request failed (${e instanceof Error ? e.message : String(e)}) — using agency feed`
+        );
+        return null;
+      })
       .then((result) => {
         cache.set(key, { fetchedAtMs: Date.now(), result });
         inFlight.delete(key);
