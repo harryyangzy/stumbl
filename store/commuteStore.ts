@@ -5,7 +5,8 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { DEFAULT_TRANSIT_AGENCY } from '@/lib/transitAgencies';
 import type { TransitAgencyId } from '@/lib/transitAgencies';
 import { draftToSaved } from '@/lib/activeCommute';
-import type { SavedCommute } from '@/types/commute';
+import { commuteRoutes } from '@/lib/commuteRoutes';
+import type { CommuteRoute, SavedCommute } from '@/types/commute';
 
 export type OnboardingDraft = {
   agencyId?: TransitAgencyId;
@@ -16,8 +17,11 @@ export type OnboardingDraft = {
   routeId?: string;
   routeShortName?: string;
   headsign?: string | null;
-  /** Selected route on line screen; kept in sync with routeId for save/countdown. */
-  selectedRouteIds?: string[];
+  /**
+   * Lines picked on the line screen, primary first. `routeId`/`routeShortName`/
+   * `headsign` mirror the first entry.
+   */
+  selectedRoutes?: CommuteRoute[];
   walkingMinutes?: number;
   bufferMinutes?: number;
 };
@@ -63,7 +67,7 @@ export const useCommuteStore = create<CommuteState>()(
             routeId: c.routeId,
             routeShortName: c.routeShortName,
             headsign: c.headsign,
-            selectedRouteIds: [c.routeId],
+            selectedRoutes: commuteRoutes(c),
             walkingMinutes: c.walkingMinutes,
             bufferMinutes: c.bufferMinutes,
           },

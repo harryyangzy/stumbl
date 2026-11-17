@@ -11,6 +11,7 @@ import { theme } from '@/lib/theme';
 import { getStaticGtfsService } from '@/services/gtfs/staticGtfsService';
 import { useTransitAgencyId } from '@/hooks/useTransitAgencyId';
 import { useCommuteStore } from '@/store/commuteStore';
+import type { CommuteRoute } from '@/types/commute';
 
 const TITLE_TO_SUB_GAP = theme.headingLineGap - 2;
 
@@ -54,46 +55,66 @@ export default function LineScreen() {
     };
   }, [draft.stopId, agencyId]);
 
+  const selectedRoutes = useMemo<CommuteRoute[]>(
+    () =>
+      draft.selectedRoutes ??
+      (draft.routeId && draft.routeShortName
+        ? [
+            {
+              routeId: draft.routeId,
+              routeShortName: draft.routeShortName,
+              headsign: draft.headsign ?? null,
+            },
+          ]
+        : []),
+    [draft.selectedRoutes, draft.routeId, draft.routeShortName, draft.headsign]
+  );
+  const selectedIds = useMemo(() => selectedRoutes.map((r) => r.routeId), [selectedRoutes]);
+
+  /** Write the selection to the draft; the first pick stays the primary route. */
+  const applySelection = useCallback(
+    (routes: CommuteRoute[]) => {
+      const primary = routes[0];
+      setDraft(
+        primary
+          ? {
+              selectedRoutes: routes,
+              routeId: primary.routeId,
+              routeShortName: primary.routeShortName,
+              headsign: primary.headsign,
+            }
+          : {
+              selectedRoutes: undefined,
+              routeId: undefined,
+              routeShortName: undefined,
+              headsign: undefined,
+            }
+      );
+    },
+    [setDraft]
+  );
+
   /** Drop route picks that are not valid for the current stop. */
   useEffect(() => {
     if (loading || options.length === 0) return;
-    const selectedIds =
-      draft.selectedRouteIds ?? (draft.routeId ? [draft.routeId] : []);
-    const valid = selectedIds.filter((id) => options.some((o) => o.routeId === id));
-    if (valid.length === selectedIds.length) return;
-    const primary = options.find((o) => o.routeId === valid[0]);
-    setDraft(
-      primary
-        ? {
-            selectedRouteIds: [primary.routeId],
-            routeId: primary.routeId,
-            routeShortName: primary.shortName,
-            headsign: primary.label,
-          }
-        : {
-            routeId: undefined,
-            routeShortName: undefined,
-            headsign: undefined,
-            selectedRouteIds: undefined,
-          }
-    );
-  }, [loading, options, draft.selectedRouteIds, draft.routeId, setDraft]);
-
-  const selectedIds = useMemo(
-    () => draft.selectedRouteIds ?? (draft.routeId ? [draft.routeId] : []),
-    [draft.selectedRouteIds, draft.routeId]
-  );
+    const valid = selectedRoutes.filter((r) => options.some((o) => o.routeId === r.routeId));
+    if (valid.length === selectedRoutes.length) return;
+    applySelection(valid);
+  }, [loading, options, selectedRoutes, applySelection]);
 
   const toggleRoute = useCallback(
     (o: LineOption) => {
-      setDraft({
-        selectedRouteIds: [o.routeId],
-        routeId: o.routeId,
-        routeShortName: o.shortName,
-        headsign: o.label,
-      });
+      const isSelected = selectedRoutes.some((r) => r.routeId === o.routeId);
+      applySelection(
+        isSelected
+          ? selectedRoutes.filter((r) => r.routeId !== o.routeId)
+          : [
+              ...selectedRoutes,
+              { routeId: o.routeId, routeShortName: o.shortName, headsign: o.label },
+            ]
+      );
     },
-    [setDraft]
+    [selectedRoutes, applySelection]
   );
 
   const onNext = () => {
@@ -131,7 +152,7 @@ export default function LineScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}>
             <Text style={styles.title}>What transit line do you take?</Text>
-            <Text style={styles.sub}>Select one route</Text>
+            <Text style={styles.sub}>Select all that apply</Text>
 
             {loading ? (
               <ActivityIndicator color={theme.brandGreen} style={styles.loader} />

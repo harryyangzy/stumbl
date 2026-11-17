@@ -71,7 +71,8 @@ export default function SummaryScreen() {
       try {
         const svc = await getStaticGtfsService(agencyId);
         const rows = svc.routesServingStop(draft.stopId);
-        const selected = draft.selectedRouteIds ?? (draft.routeId ? [draft.routeId] : []);
+        const selected =
+          draft.selectedRoutes?.map((r) => r.routeId) ?? (draft.routeId ? [draft.routeId] : []);
         const items = rows
           .filter((r) => selected.includes(r.route.routeId))
           .map((r) => ({
@@ -90,7 +91,7 @@ export default function SummaryScreen() {
     return () => {
       alive = false;
     };
-  }, [draft.stopId, draft.selectedRouteIds, draft.routeId, agencyId]);
+  }, [draft.stopId, draft.selectedRoutes, draft.routeId, agencyId]);
 
   const saved = activeCommute;
 

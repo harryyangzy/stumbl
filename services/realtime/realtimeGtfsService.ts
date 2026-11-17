@@ -127,7 +127,24 @@ function mergeRealtimeResults(results: RealtimeFetchResult[]): RealtimeFetchResu
   };
 }
 
-async function fetchTripUpdatesFromEndpoints(
+/** Reuse a feed download this long, so a multi-line commute fetches each feed once per refresh. */
+const SHARED_FEED_MS = 10_000;
+const sharedFeedFetches = new Map<
+  string,
+  { startedAtMs: number; result: Promise<RealtimeFetchResult> }
+>();
+
+function fetchTripUpdatesFromEndpoints(urls: readonly string[]): Promise<RealtimeFetchResult> {
+  const key = urls.join('|');
+  const nowMs = Date.now();
+  const hit = sharedFeedFetches.get(key);
+  if (hit && nowMs - hit.startedAtMs < SHARED_FEED_MS) return hit.result;
+  const result = fetchTripUpdatesFromEndpointsUncached(urls);
+  sharedFeedFetches.set(key, { startedAtMs: nowMs, result });
+  return result;
+}
+
+async function fetchTripUpdatesFromEndpointsUncached(
   urls: readonly string[]
 ): Promise<RealtimeFetchResult> {
   const settled = await Promise.all(

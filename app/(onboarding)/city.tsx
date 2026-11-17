@@ -34,7 +34,7 @@ export default function CityScreen() {
       routeId: undefined,
       routeShortName: undefined,
       headsign: undefined,
-      selectedRouteIds: undefined,
+      selectedRoutes: undefined,
     });
   };
 

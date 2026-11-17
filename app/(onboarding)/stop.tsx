@@ -176,7 +176,7 @@ export default function StopScreen() {
       routeId: undefined,
       routeShortName: undefined,
       headsign: undefined,
-      selectedRouteIds: undefined,
+      selectedRoutes: undefined,
     });
     void getStaticGtfsService(agencyId).then((svc) => {
       svc.routesServingStop(s.stopId);

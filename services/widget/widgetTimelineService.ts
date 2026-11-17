@@ -1,19 +1,21 @@
 import { loadStumblWidget } from '@/lib/stumblWidgetLoader';
 import { widgetMapsUrlBridge } from '@/lib/widgetBridge';
 import { DEFAULT_TRANSIT_AGENCY } from '@/lib/transitAgencies';
-import { computeCountdownState, type CountdownState } from '@/services/countdown/countdownService';
+import { commuteForRoute, commuteRoutes } from '@/lib/commuteRoutes';
+import {
+  computeCountdownState,
+  type CountdownState,
+  type ScheduledArrival,
+} from '@/services/countdown/countdownService';
 import { syncLiveActivity } from '@/services/liveActivity/liveActivityService';
 import { buildGoogleMapsCoordinateUrl } from '@/services/maps/googleMaps';
-import {
-  getStaticGtfsService,
-  type StaticGtfsService,
-} from '@/services/gtfs/staticGtfsService';
+import { getStaticGtfsService, type StaticGtfsService } from '@/services/gtfs/staticGtfsService';
 import {
   realtimeGtfsService,
   matchStopIdsForCommute,
 } from '@/services/realtime/realtimeGtfsService';
 import { countdownToWidgetProps, type WidgetDisplayProps } from '@/services/widget/widgetViewModel';
-import type { RealtimeFetchResult } from '@/types/realtime';
+import type { ArrivalPrediction, RealtimeFetchResult } from '@/types/realtime';
 import type { SavedCommute } from '@/types/commute';
 
 /**
@@ -34,13 +36,31 @@ const emptyRealtime: RealtimeFetchResult = {
   source: 'unavailable',
 };
 
+/** Live + fallback data for one selected line. */
+type LineContext = {
+  /** Single-line view of the commute (see `commuteForRoute`). */
+  commute: SavedCommute;
+  realtime: RealtimeFetchResult;
+  /** Pre-fetched schedule for when this line has no live predictions. */
+  fallbackSchedule: ScheduledArrival[];
+};
+
 type CountdownContext = {
   mapsUrl: string;
-  realtime: RealtimeFetchResult;
   matchStopIds: Set<string>;
-  /** Pre-fetched schedule for "no buses" footer when live predictions are empty. */
-  fallbackSchedule: Date[];
+  lines: LineContext[];
 };
+
+/** Live predictions for one line at `atMs`, tagged with the line's route id. */
+function linePredictionsAt(
+  line: LineContext,
+  atMs: number,
+  matchStopIds: Set<string>
+): ArrivalPrediction[] {
+  return realtimeGtfsService
+    .filterForCommute(line.realtime, line.commute, atMs, matchStopIds)
+    .map((p) => ({ ...p, routeId: line.commute.routeId }));
+}
 
 function emptyProps(now: Date): WidgetDisplayProps {
   return countdownToWidgetProps(
@@ -56,43 +76,65 @@ function emptyProps(now: Date): WidgetDisplayProps {
   );
 }
 
+async function loadLineContext(
+  commute: SavedCommute,
+  staticGtfs: StaticGtfsService,
+  at: Date,
+  matchStopIds: Set<string>
+): Promise<LineContext> {
+  const realtime = await realtimeGtfsService.fetchTripUpdatesForCommute(commute, at);
+  const line: LineContext = { commute, realtime, fallbackSchedule: [] };
+  if (linePredictionsAt(line, at.getTime(), matchStopIds).length === 0) {
+    const times = await staticGtfs.getScheduledArrivalsForCommute(commute, at, 8);
+    line.fallbackSchedule = times.map((t) => ({ at: t, routeId: commute.routeId }));
+  }
+  return line;
+}
+
 async function loadCountdownContext(commute: SavedCommute, at: Date): Promise<CountdownContext> {
   const mapsUrl = buildGoogleMapsCoordinateUrl(commute.stopLat, commute.stopLon);
   const agencyId = commute.agencyId ?? DEFAULT_TRANSIT_AGENCY;
-  const staticGtfs: StaticGtfsService = await getStaticGtfsService(agencyId);
-  const [realtime, matchStopIds] = await Promise.all([
-    realtimeGtfsService.fetchTripUpdatesForCommute(commute, at),
+  const [staticGtfs, matchStopIds] = await Promise.all([
+    getStaticGtfsService(agencyId),
     matchStopIdsForCommute(commute),
   ]);
-  const nowPredictions = realtimeGtfsService.filterForCommute(
-    realtime,
-    commute,
-    at.getTime(),
-    matchStopIds
+  const lines = await Promise.all(
+    commuteRoutes(commute).map((route) =>
+      loadLineContext(commuteForRoute(commute, route), staticGtfs, at, matchStopIds)
+    )
   );
-  const fallbackSchedule =
-    nowPredictions.length === 0
-      ? await staticGtfs.getScheduledArrivalsForCommute(commute, at, 8)
-      : [];
-  return { mapsUrl, realtime, matchStopIds, fallbackSchedule };
+  return { mapsUrl, matchStopIds, lines };
 }
 
-function countdownStateAt(
-  commute: SavedCommute,
-  at: Date,
-  ctx: CountdownContext,
-  nextScheduled: Date[]
-): CountdownState {
-  const realtimeAt: RealtimeFetchResult =
-    ctx.realtime.feedTimestampSec === null
-      ? ctx.realtime
-      : { ...ctx.realtime, feedTimestampSec: Math.floor(at.getTime() / 1000) };
-  const predictions = realtimeGtfsService.filterForCommute(
-    ctx.realtime,
-    commute,
-    at.getTime(),
-    ctx.matchStopIds
-  );
+/**
+ * Countdown at `at` across every selected line: live predictions where a line has
+ * them, that line's static schedule where it doesn't.
+ */
+function countdownStateAt(commute: SavedCommute, at: Date, ctx: CountdownContext): CountdownState {
+  const atMs = at.getTime();
+  const predictions: ArrivalPrediction[] = [];
+  const nextScheduled: ScheduledArrival[] = [];
+  for (const line of ctx.lines) {
+    const linePreds = linePredictionsAt(line, atMs, ctx.matchStopIds);
+    if (linePreds.length > 0) predictions.push(...linePreds);
+    else nextScheduled.push(...line.fallbackSchedule);
+  }
+  predictions.sort((a, b) => a.arrivalTimeSec - b.arrivalTimeSec);
+  nextScheduled.sort((a, b) => a.at.getTime() - b.at.getTime());
+
+  const timestamps = ctx.lines
+    .map((l) => l.realtime.feedTimestampSec)
+    .filter((t): t is number => t !== null);
+  const realtimeAt: RealtimeFetchResult = {
+    predictions,
+    /** Data was just fetched for this timeline; evaluate staleness relative to `at`. */
+    feedTimestampSec: timestamps.length > 0 ? Math.floor(atMs / 1000) : null,
+    source: ctx.lines.some((l) => l.realtime.source === 'live')
+      ? 'live'
+      : ctx.lines.some((l) => l.realtime.source === 'mock')
+        ? 'mock'
+        : 'unavailable',
+  };
   return computeCountdownState({
     commute,
     now: at,
@@ -108,7 +150,7 @@ async function computeCountdownNow(
   now = new Date()
 ): Promise<CountdownState> {
   const ctx = await loadCountdownContext(commute, now);
-  return countdownStateAt(commute, now, ctx, ctx.fallbackSchedule);
+  return countdownStateAt(commute, now, ctx);
 }
 
 async function buildWidgetTimelineEntries(commute: SavedCommute): Promise<{
@@ -119,26 +161,12 @@ async function buildWidgetTimelineEntries(commute: SavedCommute): Promise<{
   const ctx = await loadCountdownContext(commute, timelineStart);
 
   const entries: { date: Date; props: WidgetDisplayProps }[] = [];
-  const predictionsNow = realtimeGtfsService.filterForCommute(
-    ctx.realtime,
-    commute,
-    timelineStart.getTime(),
-    ctx.matchStopIds
-  );
-  const nextScheduledNow = predictionsNow.length === 0 ? ctx.fallbackSchedule : [];
-  const nowState = countdownStateAt(commute, timelineStart, ctx, nextScheduledNow);
+  const nowState = countdownStateAt(commute, timelineStart, ctx);
   const nowProps = countdownToWidgetProps(nowState, timelineStart);
   const targetMs = nowProps.countdownTargetMs;
 
   const pushEntry = (at: Date) => {
-    const predictions = realtimeGtfsService.filterForCommute(
-      ctx.realtime,
-      commute,
-      at.getTime(),
-      ctx.matchStopIds
-    );
-    const nextScheduled = predictions.length === 0 ? ctx.fallbackSchedule : [];
-    const state = countdownStateAt(commute, at, ctx, nextScheduled);
+    const state = countdownStateAt(commute, at, ctx);
     entries.push({
       date: at,
       props: timelineWidgetProps(countdownToWidgetProps(state, at)),
@@ -149,8 +177,7 @@ async function buildWidgetTimelineEntries(commute: SavedCommute): Promise<{
     const remainingSec = Math.ceil((targetMs - timelineStart.getTime()) / 1000);
     const baseProps = timelineWidgetProps(nowProps);
     const startSec = parseInt(baseProps.primaryValue, 10);
-    const canTickSeconds =
-      !Number.isNaN(startSec) && startSec > 0 && startSec <= remainingSec + 1;
+    const canTickSeconds = !Number.isNaN(startSec) && startSec > 0 && startSec <= remainingSec + 1;
 
     if (canTickSeconds) {
       for (let s = 0; s <= remainingSec; s++) {

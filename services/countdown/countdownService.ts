@@ -1,4 +1,5 @@
 import { REALTIME_STALE_AFTER_SEC, USE_SCHEDULE_FALLBACK } from '@/lib/config';
+import { commuteRoutes } from '@/lib/commuteRoutes';
 import type { SavedCommute } from '@/types/commute';
 import type { ArrivalPrediction, RealtimeFetchResult } from '@/types/realtime';
 
@@ -47,54 +48,75 @@ export type CountdownState = {
   realtimeOk: boolean;
 };
 
-/** Treat realtime + scheduled matches within this window as the same departure. */
+/** A static-schedule departure for one of the commute's lines. */
+export type ScheduledArrival = { at: Date; routeId: string };
+
+type UpcomingArrival = { arrivalMs: number; fromRealtime: boolean; routeId: string };
+
+/** Treat realtime + scheduled matches on the same line within this window as one departure. */
 const ARRIVAL_DEDUPE_MS = 60_000;
 
 function collectUpcomingArrivals(
   predictions: ArrivalPrediction[],
-  scheduled: Date[],
+  scheduled: ScheduledArrival[],
   nowMs: number
-): { arrivalMs: number; fromRealtime: boolean }[] {
-  const candidates: { arrivalMs: number; fromRealtime: boolean }[] = [];
+): UpcomingArrival[] {
+  const candidates: UpcomingArrival[] = [];
 
   for (const p of predictions) {
     const ms = p.arrivalTimeSec * 1000;
-    if (ms > nowMs) candidates.push({ arrivalMs: ms, fromRealtime: true });
+    if (ms > nowMs) candidates.push({ arrivalMs: ms, fromRealtime: true, routeId: p.routeId });
   }
-  for (const d of scheduled) {
-    const ms = d.getTime();
-    if (ms > nowMs) candidates.push({ arrivalMs: ms, fromRealtime: false });
+  for (const s of scheduled) {
+    const ms = s.at.getTime();
+    if (ms > nowMs) candidates.push({ arrivalMs: ms, fromRealtime: false, routeId: s.routeId });
   }
 
   candidates.sort((a, b) => a.arrivalMs - b.arrivalMs);
 
-  const deduped: { arrivalMs: number; fromRealtime: boolean }[] = [];
+  /** Last kept arrival per line — buses on different lines never merge. */
+  const lastByRoute = new Map<string, number>();
+  const deduped: UpcomingArrival[] = [];
   for (const candidate of candidates) {
-    const previous = deduped[deduped.length - 1];
+    const prevIdx = lastByRoute.get(candidate.routeId);
+    const previous = prevIdx === undefined ? undefined : deduped[prevIdx];
     if (!previous || candidate.arrivalMs - previous.arrivalMs > ARRIVAL_DEDUPE_MS) {
+      lastByRoute.set(candidate.routeId, deduped.length);
       deduped.push(candidate);
     } else if (candidate.fromRealtime && !previous.fromRealtime) {
-      deduped[deduped.length - 1] = candidate;
+      deduped[prevIdx!] = candidate;
     }
   }
 
-  return deduped;
+  return deduped.sort((a, b) => a.arrivalMs - b.arrivalMs);
 }
 
-/** Earliest live prediction strictly after the countdown bus (never static schedule). */
+/** Earliest live prediction after the countdown bus (never static schedule). */
 function nextRealtimeArrivalAfter(
   predictions: ArrivalPrediction[],
-  afterArrivalMs: number,
+  after: UpcomingArrival,
   nowMs: number
 ): number | null {
   let best: number | null = null;
   for (const p of predictions) {
     const ms = p.arrivalTimeSec * 1000;
     if (ms <= nowMs) continue;
-    if (ms <= afterArrivalMs + ARRIVAL_DEDUPE_MS) continue;
+    if (ms < after.arrivalMs) continue;
+    /** Same line within the dedupe window is the countdown bus itself. */
+    if (p.routeId === after.routeId && ms <= after.arrivalMs + ARRIVAL_DEDUPE_MS) continue;
     if (best === null || ms < best) best = ms;
   }
   return best;
+}
+
+/** Badge + headsign for the line a departure belongs to (primary line when unknown). */
+function routeLabel(
+  commute: SavedCommute,
+  routeId: string | undefined
+): { routeShort: string; headsign: string } {
+  const routes = commuteRoutes(commute);
+  const r = routes.find((x) => x.routeId === routeId) ?? routes[0];
+  return { routeShort: r.routeShortName, headsign: r.headsign ?? r.routeShortName };
 }
 
 export function computeCountdownState(params: {
@@ -102,7 +124,7 @@ export function computeCountdownState(params: {
   now: Date;
   realtime: RealtimeFetchResult;
   predictions: ArrivalPrediction[];
-  nextScheduled: Date[];
+  nextScheduled: ScheduledArrival[];
   mapsUrl: string;
 }): CountdownState {
   const { commute, now, realtime, predictions, nextScheduled, mapsUrl } = params;
@@ -154,18 +176,20 @@ export function computeCountdownState(params: {
   if (!chosen) {
     const nextSched = nextScheduled[0];
     const nextScheduledArrivalSec =
-      nextSched != null ? Math.max(0, Math.ceil((nextSched.getTime() - nowMs) / 1000)) : undefined;
+      nextSched != null
+        ? Math.max(0, Math.ceil((nextSched.at.getTime() - nowMs) / 1000))
+        : undefined;
     return {
       kind: 'no_realtime',
       nextScheduledArrivalSec,
-      routeShort: commute.routeShortName,
-      headsign: commute.headsign ?? commute.routeShortName,
+      ...routeLabel(commute, nextSched?.routeId),
       mapsUrl,
       realtimeOk: false,
     };
   }
 
   const { arrivalMs, fromRealtime } = chosen;
+  const chosenLabel = routeLabel(commute, chosen.routeId);
   const leaveAt = arrivalMs - walkMs - bufferMs;
   const busArrivalSec = Math.max(0, Math.ceil((arrivalMs - nowMs) / 1000));
   const busMinutes = Math.max(0, Math.ceil((arrivalMs - nowMs) / 60_000));
@@ -173,8 +197,7 @@ export function computeCountdownState(params: {
   const leaveMinutes = leaveSecRemaining >= 60 ? Math.ceil(leaveSecRemaining / 60) : 0;
   const leaveSeconds =
     leaveSecRemaining > 0 && leaveSecRemaining < 60 ? leaveSecRemaining : undefined;
-  const nextBusArrivalMs =
-    preds.length > 0 ? nextRealtimeArrivalAfter(preds, arrivalMs, nowMs) : null;
+  const nextBusArrivalMs = preds.length > 0 ? nextRealtimeArrivalAfter(preds, chosen, nowMs) : null;
   const nextBusArrivalSec =
     nextBusArrivalMs == null
       ? undefined
@@ -210,8 +233,7 @@ export function computeCountdownState(params: {
       busMinutes,
       busArrivalSec,
       ...sharedNext,
-      routeShort: commute.routeShortName,
-      headsign: commute.headsign ?? commute.routeShortName,
+      ...chosenLabel,
       mapsUrl,
       realtimeOk: fromRealtime,
     };
@@ -225,8 +247,7 @@ export function computeCountdownState(params: {
     busMinutes,
     busArrivalSec,
     ...sharedNext,
-    routeShort: commute.routeShortName,
-    headsign: commute.headsign ?? commute.routeShortName,
+    ...chosenLabel,
     mapsUrl,
     realtimeOk: fromRealtime,
   };

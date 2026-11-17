@@ -25,6 +25,10 @@ export function draftToSaved(d: OnboardingDraft): SavedCommute | null {
     routeId: d.routeId,
     routeShortName: d.routeShortName,
     headsign: d.headsign ?? null,
+    routes:
+      d.selectedRoutes && d.selectedRoutes.length > 0
+        ? d.selectedRoutes
+        : [{ routeId: d.routeId, routeShortName: d.routeShortName, headsign: d.headsign ?? null }],
     walkingMinutes: d.walkingMinutes,
     bufferMinutes: d.bufferMinutes,
   };
