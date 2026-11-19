@@ -42,6 +42,15 @@ export type CountdownState = {
   nextBusFromRealtime?: boolean;
   /** Seconds until the next static-schedule departure (footer when live feed is empty). */
   nextScheduledArrivalSec?: number;
+  /**
+   * Absolute epoch-ms moments behind the relative fields above. The widget
+   * timeline uses them to schedule entries exactly when a displayed value flips.
+   */
+  leaveAtMs?: number;
+  busArrivalMs?: number;
+  nextBusArrivalMs?: number;
+  nextBusLeaveAtMs?: number;
+  nextScheduledArrivalMs?: number;
   routeShort: string;
   headsign: string;
   mapsUrl: string;
@@ -182,6 +191,7 @@ export function computeCountdownState(params: {
     return {
       kind: 'no_realtime',
       nextScheduledArrivalSec,
+      nextScheduledArrivalMs: nextSched?.at.getTime(),
       ...routeLabel(commute, nextSched?.routeId),
       mapsUrl,
       realtimeOk: false,
@@ -218,6 +228,10 @@ export function computeCountdownState(params: {
   }
 
   const sharedNext = {
+    leaveAtMs: leaveAt,
+    busArrivalMs: arrivalMs,
+    nextBusArrivalMs: nextBusArrivalMs ?? undefined,
+    nextBusLeaveAtMs: nextBusArrivalMs != null ? nextBusArrivalMs - walkMs - bufferMs : undefined,
     nextBusArrivalSec,
     nextBusLeaveMinutes,
     nextBusLeaveSeconds,

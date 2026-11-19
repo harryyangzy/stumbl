@@ -8,6 +8,7 @@ import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useCommuteCountdownRefresh } from '@/hooks/useCommuteCountdownRefresh';
+import { registerWidgetBackgroundRefresh } from '@/lib/widgetBackgroundRefresh';
 import { widgetMapsUrlBridge } from '@/lib/widgetBridge';
 import { theme } from '@/lib/theme';
 import { loadStumblWidget } from '@/lib/stumblWidgetLoader';
@@ -35,6 +36,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     void loadStumblWidget();
+    void registerWidgetBackgroundRefresh();
   }, []);
 
   useEffect(() => {

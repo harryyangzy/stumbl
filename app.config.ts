@@ -79,6 +79,8 @@ const config: ExpoConfig = {
     'expo-router',
     'expo-font',
     'expo-asset',
+    /** Periodic widget refresh while the app is closed (BGTaskScheduler; iOS picks the timing). */
+    'expo-background-task',
     ...(useNativeWidgets
       ? ['./plugins/withDisableUserScriptSandboxing', './plugins/withWidgetFonts', widgetPlugin]
       : []),

@@ -19,10 +19,19 @@ import type { ArrivalPrediction, RealtimeFetchResult } from '@/types/realtime';
 import type { SavedCommute } from '@/types/commute';
 
 /**
- * How far ahead the WidgetKit timeline is scheduled. One entry per minute keeps
- * the countdown ticking on the Home Screen while the app is backgrounded/closed.
+ * How far ahead the WidgetKit timeline is scheduled. The app can only fetch new
+ * data while it runs, so the timeline has to carry the widget until the next
+ * launch. Live predictions cover the near term; the static schedule fills the rest.
  */
-const TIMELINE_HORIZON_MIN = 60;
+const TIMELINE_HORIZON_MS = 12 * 60 * 60_000;
+/** Hard cap so the shared-defaults payload stays small for the widget extension. */
+const MAX_TIMELINE_ENTRIES = 1500;
+/** Scheduled departures loaded per line — enough to span the horizon on frequent routes. */
+const SCHEDULE_LOOKAHEAD = 150;
+/** Re-check cadence when nothing on screen is counting toward a known moment. */
+const IDLE_ENTRY_MS = 15 * 60_000;
+/** `filterForCommute` keeps a prediction this long past its arrival. */
+const PREDICTION_GRACE_MS = 60_000;
 
 /** Widget renders static primary/unit text; strip timer target so it never switches to MM:SS. */
 function timelineWidgetProps(props: WidgetDisplayProps): WidgetDisplayProps {
@@ -41,26 +50,16 @@ type LineContext = {
   /** Single-line view of the commute (see `commuteForRoute`). */
   commute: SavedCommute;
   realtime: RealtimeFetchResult;
-  /** Pre-fetched schedule for when this line has no live predictions. */
-  fallbackSchedule: ScheduledArrival[];
+  /** This line's live predictions at the stop, tagged with its route id, soonest first. */
+  predictions: ArrivalPrediction[];
+  /** Static schedule, used whenever this line has no live predictions. */
+  schedule: ScheduledArrival[];
 };
 
 type CountdownContext = {
   mapsUrl: string;
-  matchStopIds: Set<string>;
   lines: LineContext[];
 };
-
-/** Live predictions for one line at `atMs`, tagged with the line's route id. */
-function linePredictionsAt(
-  line: LineContext,
-  atMs: number,
-  matchStopIds: Set<string>
-): ArrivalPrediction[] {
-  return realtimeGtfsService
-    .filterForCommute(line.realtime, line.commute, atMs, matchStopIds)
-    .map((p) => ({ ...p, routeId: line.commute.routeId }));
-}
 
 function emptyProps(now: Date): WidgetDisplayProps {
   return countdownToWidgetProps(
@@ -82,13 +81,20 @@ async function loadLineContext(
   at: Date,
   matchStopIds: Set<string>
 ): Promise<LineContext> {
-  const realtime = await realtimeGtfsService.fetchTripUpdatesForCommute(commute, at);
-  const line: LineContext = { commute, realtime, fallbackSchedule: [] };
-  if (linePredictionsAt(line, at.getTime(), matchStopIds).length === 0) {
-    const times = await staticGtfs.getScheduledArrivalsForCommute(commute, at, 8);
-    line.fallbackSchedule = times.map((t) => ({ at: t, routeId: commute.routeId }));
-  }
-  return line;
+  const [realtime, times] = await Promise.all([
+    realtimeGtfsService.fetchTripUpdatesForCommute(commute, at),
+    staticGtfs.getScheduledArrivalsForCommute(commute, at, SCHEDULE_LOOKAHEAD).catch(() => []),
+  ]);
+  /** Filter the feed once; every timeline entry then only needs a time check. */
+  const predictions = realtimeGtfsService
+    .filterForCommute(realtime, commute, at.getTime(), matchStopIds)
+    .map((p) => ({ ...p, routeId: commute.routeId }));
+  return {
+    commute,
+    realtime,
+    predictions,
+    schedule: times.map((t) => ({ at: t, routeId: commute.routeId })),
+  };
 }
 
 async function loadCountdownContext(commute: SavedCommute, at: Date): Promise<CountdownContext> {
@@ -103,7 +109,7 @@ async function loadCountdownContext(commute: SavedCommute, at: Date): Promise<Co
       loadLineContext(commuteForRoute(commute, route), staticGtfs, at, matchStopIds)
     )
   );
-  return { mapsUrl, matchStopIds, lines };
+  return { mapsUrl, lines };
 }
 
 /**
@@ -115,20 +121,20 @@ function countdownStateAt(commute: SavedCommute, at: Date, ctx: CountdownContext
   const predictions: ArrivalPrediction[] = [];
   const nextScheduled: ScheduledArrival[] = [];
   for (const line of ctx.lines) {
-    const linePreds = linePredictionsAt(line, atMs, ctx.matchStopIds);
+    const linePreds = line.predictions.filter(
+      (p) => p.arrivalTimeSec * 1000 > atMs - PREDICTION_GRACE_MS
+    );
     if (linePreds.length > 0) predictions.push(...linePreds);
-    else nextScheduled.push(...line.fallbackSchedule);
+    else nextScheduled.push(...line.schedule.filter((s) => s.at.getTime() > atMs));
   }
   predictions.sort((a, b) => a.arrivalTimeSec - b.arrivalTimeSec);
   nextScheduled.sort((a, b) => a.at.getTime() - b.at.getTime());
 
-  const timestamps = ctx.lines
-    .map((l) => l.realtime.feedTimestampSec)
-    .filter((t): t is number => t !== null);
+  const hasTimestamp = ctx.lines.some((l) => l.realtime.feedTimestampSec !== null);
   const realtimeAt: RealtimeFetchResult = {
     predictions,
     /** Data was just fetched for this timeline; evaluate staleness relative to `at`. */
-    feedTimestampSec: timestamps.length > 0 ? Math.floor(atMs / 1000) : null,
+    feedTimestampSec: hasTimestamp ? Math.floor(atMs / 1000) : null,
     source: ctx.lines.some((l) => l.realtime.source === 'live')
       ? 'live'
       : ctx.lines.some((l) => l.realtime.source === 'mock')
@@ -153,56 +159,64 @@ async function computeCountdownNow(
   return countdownStateAt(commute, now, ctx);
 }
 
+/**
+ * First moment after `t` when a countdown to `target` shows a different value:
+ * whole-minute steps (ceil), then per-second steps inside the final minute.
+ * Includes `target` itself, where the countdown rolls to the next bus.
+ */
+function nextTickAfter(target: number, t: number): number | null {
+  const remaining = target - t;
+  if (remaining <= 0) return null;
+  if (remaining > 60_000) return target - (Math.ceil(remaining / 60_000) - 1) * 60_000;
+  return target - (Math.ceil(remaining / 1000) - 1) * 1000;
+}
+
+/** When the widget's content next changes, given the state shown at `t`. */
+function nextChangeAfter(state: CountdownState, t: number): number {
+  let next = t + IDLE_ENTRY_MS;
+  for (const target of [
+    state.leaveAtMs,
+    state.busArrivalMs,
+    state.nextBusArrivalMs,
+    state.nextBusLeaveAtMs,
+    state.nextScheduledArrivalMs,
+  ]) {
+    if (target == null) continue;
+    const tick = nextTickAfter(target, t);
+    if (tick != null && tick < next) next = tick;
+  }
+  return next;
+}
+
+/**
+ * Builds timeline entries only at the moments the widget's text changes, so the
+ * number flips exactly on the minute (and every second in the final minute)
+ * instead of lagging up to a minute behind a fixed one-minute grid.
+ */
 async function buildWidgetTimelineEntries(commute: SavedCommute): Promise<{
   entries: { date: Date; props: WidgetDisplayProps }[];
   nowState: CountdownState | null;
 }> {
   const timelineStart = new Date();
   const ctx = await loadCountdownContext(commute, timelineStart);
+  const startMs = timelineStart.getTime();
+  const endMs = startMs + TIMELINE_HORIZON_MS;
 
   const entries: { date: Date; props: WidgetDisplayProps }[] = [];
-  const nowState = countdownStateAt(commute, timelineStart, ctx);
-  const nowProps = countdownToWidgetProps(nowState, timelineStart);
-  const targetMs = nowProps.countdownTargetMs;
-
-  const pushEntry = (at: Date) => {
+  let nowState: CountdownState | null = null;
+  let lastKey = '';
+  let t = startMs;
+  while (t <= endMs && entries.length < MAX_TIMELINE_ENTRIES) {
+    const at = new Date(t);
     const state = countdownStateAt(commute, at, ctx);
-    entries.push({
-      date: at,
-      props: timelineWidgetProps(countdownToWidgetProps(state, at)),
-    });
-  };
-
-  if (targetMs != null && targetMs > timelineStart.getTime()) {
-    const remainingSec = Math.ceil((targetMs - timelineStart.getTime()) / 1000);
-    const baseProps = timelineWidgetProps(nowProps);
-    const startSec = parseInt(baseProps.primaryValue, 10);
-    const canTickSeconds = !Number.isNaN(startSec) && startSec > 0 && startSec <= remainingSec + 1;
-
-    if (canTickSeconds) {
-      for (let s = 0; s <= remainingSec; s++) {
-        const secLeft = Math.max(0, startSec - s);
-        entries.push({
-          date: new Date(timelineStart.getTime() + s * 1000),
-          props: {
-            ...baseProps,
-            primaryValue: String(secLeft).padStart(2, '0'),
-          },
-        });
-      }
-    } else {
-      for (let s = 0; s <= remainingSec; s++) {
-        pushEntry(new Date(timelineStart.getTime() + s * 1000));
-      }
+    nowState ??= state;
+    const props = timelineWidgetProps(countdownToWidgetProps(state, at));
+    const key = JSON.stringify(props);
+    if (key !== lastKey) {
+      entries.push({ date: at, props });
+      lastKey = key;
     }
-    const minuteLoopStart = new Date(timelineStart.getTime() + remainingSec * 1000);
-    for (let i = 1; i <= TIMELINE_HORIZON_MIN; i++) {
-      pushEntry(new Date(minuteLoopStart.getTime() + i * 60_000));
-    }
-  } else {
-    for (let i = 0; i <= TIMELINE_HORIZON_MIN; i++) {
-      pushEntry(new Date(timelineStart.getTime() + i * 60_000));
-    }
+    t = nextChangeAfter(state, t);
   }
 
   return { entries, nowState };
